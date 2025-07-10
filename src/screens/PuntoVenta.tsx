@@ -8,6 +8,7 @@ import { cargarProductos } from "../storage/productos";
 import { agregarTurno, actualizarTurno, cargarTurnos } from "../storage/turnos";
 import { guardarNota, cargarNotasPorTurno } from "../storage/notas";
 import { useAuth } from "../context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function PuntoVenta({ navigation }: any) {
   const { user, turno, abrirTurno, cerrarTurno } = useAuth();
@@ -45,8 +46,10 @@ export default function PuntoVenta({ navigation }: any) {
     if (actual) {
       setTurnoActivo(actual);
       setUsuario(actual.usuario);
-      const notasTurno = await cargarNotasPorTurno(actual.id);
-      setNotas(notasTurno);
+      const notasCerradas = await cargarNotasPorTurno(actual.id);
+      const abiertasJSON = await AsyncStorage.getItem(`notasAbiertas_${actual.id}`);
+      const notasAbiertas: Nota[] = abiertasJSON ? JSON.parse(abiertasJSON) : [];
+      setNotas([...notasAbiertas, ...notasCerradas]);
     } else {
       // 🔒 Si no hay turno abierto, vaciar todo
       setTurnoActivo(null);
@@ -116,6 +119,8 @@ export default function PuntoVenta({ navigation }: any) {
       totalVendido,
     });
 
+    await AsyncStorage.removeItem(`notasAbiertas_${turnoActivo.id}`);
+
     setTurnoActivo(null);
     setUsuario("");
     setNotas([]);
@@ -179,6 +184,13 @@ export default function PuntoVenta({ navigation }: any) {
     setMontoPago("");
   };
 
+    useEffect(() => {
+    if (!turnoActivo) return;
+    const abiertas = notas.filter(n => !n.cerrada);
+    AsyncStorage.setItem(`notasAbiertas_${turnoActivo.id}`, JSON.stringify(abiertas));
+  }, [notas, turnoActivo]);
+
+
   const notaSeleccionada = notas.find(n => n.id === notaActiva);
 
   if (!turnoActivo) {
@@ -222,13 +234,23 @@ export default function PuntoVenta({ navigation }: any) {
         style={{ marginVertical: 8 }}
       />
 
-      <View style={{ marginTop: 16 }}>
-        <Text style={{ fontSize: 20 }}>Notas activas:</Text>
-        {notas.map(nota => (
-          <TouchableOpacity key={nota.id} onPress={() => setNotaActiva(nota.id)} style={{ marginVertical: 4 }}>
-            <Text style={{ fontWeight: "bold", fontSize: 16 }}>{nota.mote || "Sin mote"} - {nota.cerrada ? "Cerrada" : "Abierta"}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={{ flexDirection: "row", marginTop: 16 }}>
+        <View style={{ flex: 1, marginRight: 8 }}>
+          <Text style={{ fontSize: 20 }}>Abiertas:</Text>
+          {notas.filter(n => !n.cerrada).map(nota => (
+            <TouchableOpacity key={nota.id} onPress={() => setNotaActiva(nota.id)} style={{ marginVertical: 4 }}>
+              <Text style={{ fontWeight: "bold", fontSize: 16 }}>{nota.mote || "Sin mote"}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={{ flex: 1, marginLeft: 8 }}>
+          <Text style={{ fontSize: 20 }}>Cerradas:</Text>
+          {notas.filter(n => n.cerrada).map(nota => (
+            <TouchableOpacity key={nota.id} onPress={() => setNotaActiva(nota.id)} style={{ marginVertical: 4 }}>
+              <Text style={{ fontWeight: "bold", fontSize: 16 }}>{nota.mote || "Sin mote"}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {notaSeleccionada && (
