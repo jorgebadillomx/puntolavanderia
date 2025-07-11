@@ -3,7 +3,7 @@ import { Turno } from "../types";
 import { agregarTurno, cargarTurnos, actualizarTurno } from "../storage/turnos";
 
 interface AuthContextData {
-   user: { username: string; role: 'operador' | 'administrador' } | null;
+  user: { username: string; role: "operador" | "administrador" } | null;
   turno: Turno | null;
   loading: boolean;
   abrirTurno: (data: {
@@ -21,9 +21,10 @@ interface AuthContextData {
 const AuthContext = createContext<AuthContextData | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<
-    { username: string; role: 'operador' | 'administrador' } | null
-  >(null);
+  const [user, setUser] = useState<{
+    username: string;
+    role: "operador" | "administrador";
+  } | null>(null);
   const loggedIn = React.useRef(false);
   const [turno, setTurno] = useState<Turno | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,12 +35,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const activo = turnos.find((t) => !t.fechaCierre);
       if (activo && !loggedIn.current) {
         setTurno(activo);
-        setUser({ username: activo.usuario, role: 'operador' });
+        setUser({ username: activo.usuario, role: "operador" });
+        // if (
+        //   activo.usuario.trim().toLowerCase() === "badis" &&
+        //   Math.abs(activo.billetesInicial - 1983) < 0.01 &&
+        //   Math.abs(activo.monedasInicial) < 0.01
+        // ) {
+        //   setUser({ username: "badis", role: "administrador" });
+        //   setTurno(null);
+        //   return;
+        // }
       }
       setLoading(false);
     };
     cargar();
   }, []);
+
+  const parseAmount = (value: string) => {
+    const num = parseFloat(value.replace(",", "."));
+    return isNaN(num) ? 0 : num;
+  };
 
   const abrirTurno = async ({
     username,
@@ -55,20 +70,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       billetes,
       monedas,
     });
-
     loggedIn.current = true;
 
     // Inicio de sesión como administrador
-    const billetesNum = parseFloat(billetes)
-    const monedasNum = parseFloat(monedas)
+    const billetesNum = parseAmount(billetes);
+    const monedasNum = parseAmount(monedas);
+
+
     if (
-      username.trim().toLowerCase() === 'badis' &&
-      billetesNum === 1983 &&
-      monedasNum === 0
+      username.trim().toLowerCase() === "badis" &&
+      Math.abs(billetesNum - 1983) < 0.01 &&
+      Math.abs(monedasNum) < 0.01
     ) {
-      setUser({ username: 'badis', role: 'administrador' })
-      setTurno(null)
-      return
+      setUser({ username: "badis", role: "administrador" });
+      setTurno(null);
+      return;
     }
 
     const nuevoTurno: Turno = {
@@ -98,10 +114,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     totalNotas?: number;
   }) => {
     if (user?.role === "administrador") {
-      setUser(null);
-      loggedIn.current = false
+          setUser(null);
+    loggedIn.current = false;
       return;
     }
+
+
 
     if (!turno) return;
 
@@ -115,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await actualizarTurno(turno.id, turnoCerrado);
     setUser(null);
     setTurno(null);
-    loggedIn.current = false
+    loggedIn.current = false;
   };
 
   return (

@@ -1,10 +1,10 @@
 import {
   collection,
-  addDoc,
   getDocs,
   updateDoc,
   doc,
   getDoc,
+    setDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Turno } from "../types";
@@ -13,7 +13,8 @@ const turnosRef = collection(db, "turnos");
 
 export async function agregarTurno(turno: Turno) {
   try {
-    await addDoc(turnosRef, turno);
+        const ref = doc(db, "turnos", turno.id);
+    await setDoc(ref, turno);
   } catch (error) {
     console.error("[turnos.ts] Error al agregar turno:", error);
   }

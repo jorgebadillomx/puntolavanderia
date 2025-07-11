@@ -1,33 +1,31 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from "react";
+import { View, Text, TextInput, Button, StyleSheet } from "react-native";
+import { useAuth } from "../context/AuthContext";
 
 export default function LoginScreen() {
   const { abrirTurno } = useAuth();
-  const [usuario, setUsuario] = useState('');
-  const [billetes, setBilletes] = useState('');
-  const [monedas, setMonedas] = useState('');
+  const [usuario, setUsuario] = useState("");
+  const [billetes, setBilletes] = useState("");
+  const [monedas, setMonedas] = useState("");
 
-const iniciar = () => {
-  const billetesNum = parseFloat(billetes) || 0;
-  const monedasNum = parseFloat(monedas) || 0;
+  const iniciar = () => {
+    if (usuario.trim()) {
+      console.log("[LoginScreen] Enviando datos a abrirTurno:", {
+        username: usuario.trim(),
+        billetes,
+        monedas,
+      });
 
-  if (usuario.trim()) {
-    console.log("[LoginScreen] Enviando datos a abrirTurno:", {
-      username: usuario.trim(),
-      billetes: billetesNum.toFixed(2),
-      monedas: monedasNum.toFixed(2),
-    });
+      abrirTurno({
+        username: usuario.trim(),
 
-    abrirTurno({
-      username: usuario.trim(),
-      billetes: billetesNum.toFixed(2),
-      monedas: monedasNum.toFixed(2),
-    });
-  } else {
-    console.warn("[LoginScreen] Usuario vacío. No se envía nada.");
-  }
-};
+        billetes,
+        monedas,
+      });
+    } else {
+      console.warn("[LoginScreen] Usuario vacío. No se envía nada.");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -62,12 +60,19 @@ const iniciar = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, justifyContent: 'center', padding: 20,
+    flex: 1,
+    justifyContent: "center",
+    padding: 20,
   },
   label: {
-    fontWeight: 'bold', marginTop: 10,
+    fontWeight: "bold",
+    marginTop: 10,
   },
   input: {
-    borderWidth: 1, borderColor: '#ccc', padding: 10, borderRadius: 5, marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
   },
 });
