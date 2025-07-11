@@ -47,11 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     cargar();
   }, []);
 
-  const parseAmount = (value: string) => {
-    const num = parseFloat(value.replace(",", "."));
-    return isNaN(num) ? 0 : num;
-  };
-
   const abrirTurno = async ({
     username,
     billetes,
@@ -87,8 +82,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: Date.now().toString(),
       usuario: username,
       fechaApertura: new Date().toISOString(),
-      billetesInicial: parseFloat(billetes),
-      monedasInicial: parseFloat(monedas),
+      billetesInicial: parseAmount(billetes),
+      monedasInicial: parseAmount(monedas),
     };
 
     try {
@@ -122,8 +117,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const turnoCerrado: Partial<Turno> = {
       fechaCierre: new Date().toISOString(),
-      billetesFinal: parseFloat(billetes),
-      monedasFinal: parseFloat(monedas),
+      billetesFinal: parseAmount(billetes),
+      monedasFinal: parseAmount(monedas),
       totalVendido: totalNotas,
     };
 
