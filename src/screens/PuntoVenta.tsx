@@ -192,6 +192,12 @@ export default function PuntoVenta({ navigation }: any) {
 
 
   const notaSeleccionada = notas.find(n => n.id === notaActiva);
+  const totalNotaSeleccionada = notaSeleccionada
+    ? notaSeleccionada.productos.reduce(
+        (s, p) => s + p.precio * (p.cantidad ?? 1),
+        0
+      )
+    : 0;
 
   if (!turnoActivo) {
     return (
@@ -226,11 +232,12 @@ export default function PuntoVenta({ navigation }: any) {
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => agregarProductoANota(item)} style={styles.productoItem}>
             <Text>{item.nombre}</Text>
-            <Text>${item.precio}</Text>
+            <Text style={{ fontWeight: "bold" }}>${item.precio}</Text>
           </TouchableOpacity>
         )}
         keyExtractor={item => item.id}
         horizontal
+        showsHorizontalScrollIndicator={false}
         style={{ marginVertical: 8 }}
       />
 
@@ -260,6 +267,11 @@ export default function PuntoVenta({ navigation }: any) {
             <Text key={p.id}>{p.nombre} x {p.cantidad ?? 1} = ${p.precio * (p.cantidad ?? 1)}</Text>
           ))}
 
+          <Text style={{ marginTop: 6, fontWeight: "bold" }}>
+            Total: ${totalNotaSeleccionada.toFixed(2)}
+          </Text>
+
+
           {!notaSeleccionada.cerrada && (
             <View style={{ marginTop: 8 }}>
               <Button title="Cerrar" onPress={() => setMostrarModal(true)} />
@@ -270,6 +282,9 @@ export default function PuntoVenta({ navigation }: any) {
             <View style={styles.modalOverlay}>
               <View style={styles.modal}>
                 <Text style={styles.modalTitle}>Tipo de pago</Text>
+                                <Text style={{ marginBottom: 8 }}>
+                  Total: ${totalNotaSeleccionada.toFixed(2)}
+                </Text>
                 <TextInput
                   placeholder="Monto recibido"
                   value={montoPago}
@@ -352,7 +367,14 @@ const styles = StyleSheet.create({
     borderWidth: 1, padding: 8, marginBottom: 10, borderRadius: 6
   },
   productoItem: {
-    backgroundColor: "#eee", padding: 10, borderRadius: 6, marginRight: 8
+    backgroundColor: "#f9f9f9",
+    padding: 10,
+    borderRadius: 8,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    alignItems: "center",
+    minWidth: 80
   },
   menuSuperior: {
     flexDirection: "row", justifyContent: "space-between", marginBottom: 16
