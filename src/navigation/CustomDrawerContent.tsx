@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 export default function CustomDrawerContent(props: any) {
   const { cerrarTurno, user } = useAuth();
 
-console.log('user', user && user?.role, new Date().toString());
+// console.log('user', user && user?.role, new Date().toString());
 
 return (
   <DrawerContentScrollView {...props}>

@@ -10,7 +10,7 @@ const Drawer = createDrawerNavigator();
 
 export default function MainDrawer() {
     const { user } = useAuth();
-  const initialRoute = user?.role === 'operador' ? 'PuntoVenta' : 'GestionProductos';
+  const initialRoute = user?.role === 'operador' ? 'PuntoVenta' : 'HistorialTurnos';
   return (
     <Drawer.Navigator
       initialRouteName={initialRoute}
