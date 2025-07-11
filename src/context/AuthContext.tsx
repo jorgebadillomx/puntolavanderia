@@ -1,37 +1,75 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Turno } from '../types';
-import { agregarTurno, cargarTurnos, actualizarTurno } from '../storage/turnos';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { Turno } from "../types";
+import { agregarTurno, cargarTurnos, actualizarTurno } from "../storage/turnos";
 
 interface AuthContextData {
-  user: { username: string } | null;
+   user: { username: string; role: 'operador' | 'administrador' } | null;
   turno: Turno | null;
   loading: boolean;
-  abrirTurno: (data: { username: string; billetes: string; monedas: string }) => Promise<void>;
-  cerrarTurno: (data: { billetes: string; monedas: string; totalNotas?: number }) => Promise<void>;
+  abrirTurno: (data: {
+    username: string;
+    billetes: string;
+    monedas: string;
+  }) => Promise<void>;
+  cerrarTurno: (data: {
+    billetes: string;
+    monedas: string;
+    totalNotas?: number;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextData | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<{ username: string } | null>(null);
+  const [user, setUser] = useState<
+    { username: string; role: 'operador' | 'administrador' } | null
+  >(null);
+  const loggedIn = React.useRef(false);
   const [turno, setTurno] = useState<Turno | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const cargar = async () => {
       const turnos = await cargarTurnos();
-      const activo = turnos.find(t => !t.fechaCierre);
-      if (activo) {
+      const activo = turnos.find((t) => !t.fechaCierre);
+      if (activo && !loggedIn.current) {
         setTurno(activo);
-        setUser({ username: activo.usuario });
+        setUser({ username: activo.usuario, role: 'operador' });
       }
       setLoading(false);
     };
     cargar();
   }, []);
 
-  const abrirTurno = async ({ username, billetes, monedas }: { username: string; billetes: string; monedas: string }) => {
-    console.log("[AuthContext] abrirTurno recibido:", { username, billetes, monedas });
+  const abrirTurno = async ({
+    username,
+    billetes,
+    monedas,
+  }: {
+    username: string;
+    billetes: string;
+    monedas: string;
+  }) => {
+    console.log("[AuthContext] abrirTurno recibido:", {
+      username,
+      billetes,
+      monedas,
+    });
+
+    loggedIn.current = true;
+
+    // Inicio de sesión como administrador
+    const billetesNum = parseFloat(billetes)
+    const monedasNum = parseFloat(monedas)
+    if (
+      username.trim().toLowerCase() === 'badis' &&
+      billetesNum === 1983 &&
+      monedasNum === 0
+    ) {
+      setUser({ username: 'badis', role: 'administrador' })
+      setTurno(null)
+      return
+    }
 
     const nuevoTurno: Turno = {
       id: Date.now().toString(),
@@ -43,16 +81,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       await agregarTurno(nuevoTurno);
-      console.log("[AuthContext] Turno guardado en Firestore");
       setTurno(nuevoTurno);
-      setUser({ username });
-      console.log("[AuthContext] Usuario seteado:", { username });
+      setUser({ username, role: "operador" });
     } catch (error) {
       console.error("[AuthContext] Error al guardar turno:", error);
     }
   };
 
-  const cerrarTurno = async ({ billetes, monedas, totalNotas }: { billetes: string; monedas: string; totalNotas?: number }) => {
+  const cerrarTurno = async ({
+    billetes,
+    monedas,
+    totalNotas,
+  }: {
+    billetes: string;
+    monedas: string;
+    totalNotas?: number;
+  }) => {
+    if (user?.role === "administrador") {
+      setUser(null);
+      loggedIn.current = false
+      return;
+    }
+
     if (!turno) return;
 
     const turnoCerrado: Partial<Turno> = {
@@ -65,10 +115,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await actualizarTurno(turno.id, turnoCerrado);
     setUser(null);
     setTurno(null);
+    loggedIn.current = false
   };
 
   return (
-    <AuthContext.Provider value={{ user, turno, loading, abrirTurno, cerrarTurno }}>
+    <AuthContext.Provider
+      value={{ user, turno, loading, abrirTurno, cerrarTurno }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -76,6 +129,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth debe usarse dentro de AuthProvider');
+  if (!ctx) throw new Error("useAuth debe usarse dentro de AuthProvider");
   return ctx;
 }

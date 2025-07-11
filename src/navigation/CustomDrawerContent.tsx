@@ -2,16 +2,25 @@ import { DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navi
 import { useAuth } from '../context/AuthContext';
 
 export default function CustomDrawerContent(props: any) {
-  const { cerrarTurno } = useAuth();
+  const { cerrarTurno, user } = useAuth();
 
-  return (
-    <DrawerContentScrollView {...props}>
-      <DrawerItemList {...props} />
-    <DrawerItem
-      label="Cerrar turno"
+console.log('user', user && user?.role);
+
+return (
+  <DrawerContentScrollView {...props}>
+    <DrawerItemList {...props} />
+  <DrawerItem
+    label={user?.role === 'administrador' ? 'Cerrar sesi\u00f3n' : 'Cerrar turno'}
+
       onPress={() => {
-        props.navigation.emit({ type: "cerrarTurno" });
-      }}/>
+        
+        if (user?.role === 'administrador') {
+          cerrarTurno({ billetes: '0', monedas: '0' });
+        } else {
+          props.navigation.emit({ type: 'cerrarTurno' });
+        }
+      }}
+    />
     </DrawerContentScrollView>
   );
 }

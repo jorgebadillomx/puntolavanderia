@@ -276,10 +276,10 @@ export default function PuntoVenta({ navigation }: any) {
         <Text style={{ fontWeight: "bold" }}>
           Usuario: {turnoActivo.usuario}
         </Text>
-        <Button
+        {/* <Button
           title="Historial turnos"
           onPress={() => navigation.navigate("HistorialTurnos")}
-        />
+        /> */}
         <Button
           title="Cerrar turno"
           color="#c22"
