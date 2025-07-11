@@ -18,6 +18,7 @@ import { agregarTurno, actualizarTurno, cargarTurnos } from "../storage/turnos";
 import { guardarNota, cargarNotasPorTurno } from "../storage/notas";
 import { useAuth } from "../context/AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { parseAmount } from "../utils/parseAmount";
 import { MaterialIcons } from "@expo/vector-icons";
 
 export default function PuntoVenta({ navigation }: any) {
@@ -89,8 +90,8 @@ export default function PuntoVenta({ navigation }: any) {
       id: Date.now().toString(),
       usuario: usuario.trim(),
       fechaApertura: new Date().toISOString(),
-      billetesInicial: parseFloat(billetes),
-      monedasInicial: parseFloat(monedas),
+      billetesInicial: parseAmount(billetes),
+      monedasInicial: parseAmount(monedas),
     };
 
     await agregarTurno(nuevoTurno);
@@ -130,8 +131,8 @@ export default function PuntoVenta({ navigation }: any) {
 
     await actualizarTurno(turnoActivo.id, {
       fechaCierre: new Date().toISOString(),
-      billetesFinal: parseFloat(billetesFinal),
-      monedasFinal: parseFloat(monedasFinal),
+      billetesFinal: parseAmount(billetesFinal),
+      monedasFinal: parseAmount(monedasFinal),
       totalVendido,
     });
 

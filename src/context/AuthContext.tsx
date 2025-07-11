@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { parseAmount } from "../utils/parseAmount";
 import { Turno } from "../types";
 import { agregarTurno, cargarTurnos, actualizarTurno } from "../storage/turnos";
+
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "badis";
+const ADMIN_BILLETES = parseFloat(process.env.ADMIN_BILLETES ?? "1983");
+const ADMIN_MONEDAS = parseFloat(process.env.ADMIN_MONEDAS ?? "0");
 
 interface AuthContextData {
   user: { username: string; role: "operador" | "administrador" } | null;
@@ -36,15 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (activo && !loggedIn.current) {
         setTurno(activo);
         setUser({ username: activo.usuario, role: "operador" });
-        // if (
-        //   activo.usuario.trim().toLowerCase() === "badis" &&
-        //   Math.abs(activo.billetesInicial - 1983) < 0.01 &&
-        //   Math.abs(activo.monedasInicial) < 0.01
-        // ) {
-        //   setUser({ username: "badis", role: "administrador" });
-        //   setTurno(null);
-        //   return;
-        // }
       }
       setLoading(false);
     };
@@ -78,11 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
     if (
-      username.trim().toLowerCase() === "badis" &&
-      Math.abs(billetesNum - 1983) < 0.01 &&
-      Math.abs(monedasNum) < 0.01
+      username.trim().toLowerCase() === ADMIN_USERNAME.toLowerCase() &&
+      Math.abs(billetesNum - ADMIN_BILLETES) < 0.01 &&
+      Math.abs(monedasNum - ADMIN_MONEDAS) < 0.01
     ) {
-      setUser({ username: "badis", role: "administrador" });
+      setUser({ username: ADMIN_USERNAME, role: "administrador" });
       setTurno(null);
       return;
     }
@@ -114,8 +110,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     totalNotas?: number;
   }) => {
     if (user?.role === "administrador") {
-          setUser(null);
-    loggedIn.current = false;
+      setUser(null);
+      setTurno(null);
+      loggedIn.current = false;
       return;
     }
 
