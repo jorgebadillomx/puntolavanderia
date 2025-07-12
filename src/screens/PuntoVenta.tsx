@@ -15,9 +15,8 @@ import {
 import { Producto, Nota, Turno } from "../types";
 import { cargarProductos } from "../storage/productos";
 import { agregarTurno, cargarTurnos } from "../storage/turnos";
-import { guardarNota, cargarNotasPorTurno } from "../storage/notas";
+import { guardarNota, cargarNotasPorTurno, getNotaPorId, actualizarNota } from "../storage/notas";
 import { useAuth } from "../context/AuthContext";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { parseAmount } from "../utils/parseAmount";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -59,15 +58,12 @@ export default function PuntoVenta({ navigation }: any) {
     if (actual) {
       setTurnoActivo(actual);
       setUsuario(actual.usuario);
-      const notasCerradas = await cargarNotasPorTurno(actual.id);
-      const abiertasJSON = await AsyncStorage.getItem(
-        `notasAbiertas_${actual.id}`
-      );
-      const notasAbiertas: Nota[] = abiertasJSON
-        ? JSON.parse(abiertasJSON)
-        : [];
+      const notasCerradas = await cargarNotasPorTurno(actual.id, true);
+      const notasAbiertas = await cargarNotasPorTurno(actual.id, false);
+
       setNotas([...notasAbiertas, ...notasCerradas]);
     } else {
+
       //  Si no hay turno abierto, vaciar todo
       setTurnoActivo(null);
       setUsuario("");
@@ -135,8 +131,6 @@ export default function PuntoVenta({ navigation }: any) {
       totalNotas: totalVendido,
     });
 
-    await AsyncStorage.removeItem(`notasAbiertas_${turnoActivo.id}`);
-
     setTurnoActivo(null);
     setUsuario("");
     setNotas([]);
@@ -146,7 +140,7 @@ export default function PuntoVenta({ navigation }: any) {
     Alert.alert("Turno cerrado", "Se cerró el turno correctamente.");
   };
 
-  const agregarNota = () => {
+  const agregarNota = async () => {
     if (!turnoActivo) {
       Alert.alert("Primero debes iniciar un turno.");
       return;
@@ -159,79 +153,119 @@ export default function PuntoVenta({ navigation }: any) {
       cerrada: false,
       idTurno: turnoActivo.id,
     };
-    setNotas([...notas, nueva]);
+
+    guardarNota(nueva);
+    const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
+    const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+    setNotas([...notasAbiertas, ...notasCerradas]);
     setNotaActiva(nueva.id);
     setMote("");
   };
 
-  const agregarProductoANota = (producto: Producto) => {
-    setNotas(
-      notas.map((nota) => {
-        if (nota.id !== notaActiva || nota.cerrada) return nota;
-        const productos = [...nota.productos];
-        const idx = productos.findIndex((p) => p.id === producto.id);
-        if (idx >= 0) productos[idx].cantidad += 1;
-        else productos.push({ ...producto, cantidad: 1 });
-        return { ...nota, productos };
-      })
-    );
-  };
+const agregarProductoANota = async (producto: Producto) => {
+  if (!notaActiva) return;
 
-  const quitarProductoDeNota = (idProducto: string) => {
-    setNotas(
-      notas.map((nota) => {
-        if (nota.id !== notaActiva || nota.cerrada) return nota;
-        const productos = [...nota.productos];
-        const idx = productos.findIndex((p) => p.id === idProducto);
-        if (idx >= 0) {
-          if (productos[idx].cantidad > 1) productos[idx].cantidad -= 1;
-          else productos.splice(idx, 1);
-        }
-        return { ...nota, productos };
-      })
-    );
-  };
+  // 1. Obtener la nota actual de Firestore
+  const nota = await getNotaPorId(notaActiva);
+  if (!nota || nota.cerrada) return;
+
+  // 2. Modificar productos
+  const productos = [...nota.productos];
+  const idx = productos.findIndex((p) => p.id === producto.id);
+  if (idx >= 0) productos[idx].cantidad += 1;
+  else productos.push({ ...producto, cantidad: 1 });
+
+  // 3. Actualizar la nota en Firestore
+  await actualizarNota({ ...nota, productos });
+
+  // 4. Actualizar el estado local en React
+    if (turnoActivo) {
+    const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
+    const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+    setNotas([...notasAbiertas, ...notasCerradas]);
+  }
+};
+
+const quitarProductoDeNota = async (idProducto: string) => {
+  if (!notaActiva) return;
+
+  // 1. Obtener la nota actual de Firestore
+  const nota = await getNotaPorId(notaActiva);
+  if (!nota || nota.cerrada) return;
+
+  // 2. Modificar productos
+  const productos = [...nota.productos];
+  const idx = productos.findIndex((p) => p.id === idProducto);
+  if (idx >= 0) {
+    if (productos[idx].cantidad > 1) productos[idx].cantidad -= 1;
+    else productos.splice(idx, 1);
+  }
+
+  // 3. Actualizar la nota en Firestore
+  await actualizarNota({ ...nota, productos });
+
+  // 4. Actualizar el estado local en React
+    if (turnoActivo) {
+    const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
+    const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+    setNotas([...notasAbiertas, ...notasCerradas]);
+  }
+};
 
   const cerrarNota = async (
-    id: string,
-    metodoPago: string,
-    montoRecibido: number
-  ) => {
-    const nuevasNotas = notas.map((n) => {
-      if (n.id !== id) return n;
-      const total = n.productos.reduce(
-        (s, p) => s + p.precio * (p.cantidad ?? 1),
-        0
-      );
-      const fechaCierre = new Date().toISOString();
-      const nuevaNota: Nota = {
-        ...n,
-        cerrada: true,
-        metodoPago,
-        montoRecibido,
-        fechaCierre,
-        cambio: metodoPago === "efectivo" ? montoRecibido - total : undefined,
-        total,
-        idTurno: turnoActivo?.id ?? "",
-      };
-      guardarNota(nuevaNota);
-      return nuevaNota;
-    });
-    setNotas(nuevasNotas);
-    setNotaActiva(null);
-    setMostrarModal(false);
-    setPagoSeleccionado(null);
-    setMontoPago("");
-  };
+  id: string,
+  metodoPago: string,
+  montoRecibido: number
+) => {
+  // 1. Busca la nota en el array local
+  const notaOriginal = notas.find((n) => n.id === id);
+  if (!notaOriginal) {
+    Alert.alert("Nota no encontrada");
+    return;
+  }
 
-  useEffect(() => {
-    if (!turnoActivo) return;
-    const abiertas = notas.filter((n) => !n.cerrada);
-    AsyncStorage.setItem(
-      `notasAbiertas_${turnoActivo.id}`,
-      JSON.stringify(abiertas)
-    );
-  }, [notas, turnoActivo]);
+  const nota = await getNotaPorId(id);
+  if (!nota) {
+    Alert.alert("Nota no encontrada");
+    return;
+  }
+
+  // 2. Calcula totales y crea la nota modificada
+  const total = notaOriginal.productos.reduce(
+    (s, p) => s + p.precio * (p.cantidad ?? 1),
+    0
+  );
+  const fechaCierre = new Date().toISOString();
+
+  nota.cambio = metodoPago === "efectivo" ? montoRecibido - total : undefined;  
+  nota.fechaCierre = fechaCierre;
+  nota.cerrada = true;
+  nota.metodoPago = metodoPago;
+  nota.montoRecibido = montoRecibido;
+  nota.total = total;
+  nota.idTurno = turnoActivo?.id ?? "";
+
+  // 3. Actualiza en Firestore
+  await actualizarNota(nota);
+
+  // 4. Refresca notas desde la base de datos para asegurar consistencia
+  if (turnoActivo) {
+    const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
+    const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+    setNotas([...notasAbiertas, ...notasCerradas]);
+  }
+
+  setNotaActiva(null);
+  setMostrarModal(false);
+  setPagoSeleccionado(null);
+  setMontoPago("");
+};
+
+  // useEffect(() => {
+  //   if (!turnoActivo) return;
+  //   const abiertas = notas.filter((n) => !n.cerrada);
+  //   guardarNotasAbiertas(turnoActivo.id, abiertas);
+  // }, [notas, turnoActivo]);
 
   const notaSeleccionada = notas.find((n) => n.id === notaActiva);
   const totalNotaSeleccionada = notaSeleccionada
