@@ -1,7 +1,7 @@
 // src/storage/notasRemoto.ts
 import {
   collection,
-  addDoc,
+  setDoc,
   query,
   where,
   getDocs,
@@ -16,7 +16,9 @@ const notasRef = collection(db, "notas");
 
 export async function guardarNota(nota: Nota) {
   try {
-    await addDoc(notasRef, nota);
+        // Use the nota id as the document id to keep consistency
+    const notaRef = doc(notasRef, nota.id);
+    await setDoc(notaRef, nota);
   } catch (error) {
     console.error("[notas.ts] ERROR al guardar nota:", error);
   }
@@ -33,7 +35,11 @@ export async function cargarNotasPorTurno(
       where("cerrada", "==", cerrada) 
     );
     const snapshot = await getDocs(q);
-    const notas: Nota[] = snapshot.docs.map((doc) => doc.data() as Nota);
+
+    const notas: Nota[] = snapshot.docs.map((d) => ({
+      ...(d.data() as Nota),
+    }));
+
     return notas;
   } catch (error) {
     console.error("[notas.ts] ERROR al cargar notas:", error);
