@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Producto, Nota, Turno } from "../types";
 import { cargarProductos } from "../storage/productos";
-import { agregarTurno, actualizarTurno, cargarTurnos } from "../storage/turnos";
+import { agregarTurno, cargarTurnos } from "../storage/turnos";
 import { guardarNota, cargarNotasPorTurno } from "../storage/notas";
 import { useAuth } from "../context/AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -22,7 +22,7 @@ import { parseAmount } from "../utils/parseAmount";
 import { MaterialIcons } from "@expo/vector-icons";
 
 export default function PuntoVenta({ navigation }: any) {
-  const { user, turno, abrirTurno, cerrarTurno } = useAuth();
+  const { cerrarTurno: cerrarSesion } = useAuth();
 
   const [usuario, setUsuario] = useState("");
   const [billetes, setBilletes] = useState("");
@@ -68,7 +68,7 @@ export default function PuntoVenta({ navigation }: any) {
         : [];
       setNotas([...notasAbiertas, ...notasCerradas]);
     } else {
-      // 🔒 Si no hay turno abierto, vaciar todo
+      //  Si no hay turno abierto, vaciar todo
       setTurnoActivo(null);
       setUsuario("");
       setNotas([]);
@@ -129,11 +129,10 @@ export default function PuntoVenta({ navigation }: any) {
       .filter((n) => n.idTurno === turnoActivo.id && n.cerrada)
       .reduce((s, n) => s + (n.total || 0), 0);
 
-    await actualizarTurno(turnoActivo.id, {
-      fechaCierre: new Date().toISOString(),
-      billetesFinal: parseAmount(billetesFinal),
-      monedasFinal: parseAmount(monedasFinal),
-      totalVendido,
+    await cerrarSesion({
+      billetes: billetesFinal,
+      monedas: monedasFinal,
+      totalNotas: totalVendido,
     });
 
     await AsyncStorage.removeItem(`notasAbiertas_${turnoActivo.id}`);
