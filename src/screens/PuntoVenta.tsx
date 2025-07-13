@@ -145,11 +145,14 @@ export default function PuntoVenta({ navigation }: any) {
       Alert.alert("Primero debes iniciar un turno.");
       return;
     }
+    const fechaAbre = new Date().toISOString();
+
     const nueva: Nota = {
       id: Date.now().toString(),
       mote,
       productos: [],
       operador: usuario,
+      fechaAbre: fechaAbre,
       cerrada: false,
       idTurno: turnoActivo.id,
     };
@@ -260,13 +263,7 @@ const quitarProductoDeNota = async (idProducto: string) => {
   setPagoSeleccionado(null);
   setMontoPago("");
 };
-
-  // useEffect(() => {
-  //   if (!turnoActivo) return;
-  //   const abiertas = notas.filter((n) => !n.cerrada);
-  //   guardarNotasAbiertas(turnoActivo.id, abiertas);
-  // }, [notas, turnoActivo]);
-
+S
   const notaSeleccionada = notas.find((n) => n.id === notaActiva);
   const totalNotaSeleccionada = notaSeleccionada
     ? notaSeleccionada.productos.reduce(

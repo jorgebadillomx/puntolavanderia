@@ -8,6 +8,7 @@ export interface Producto {
 export interface Nota {
   id: string;
   mote: string;
+  fechaAbre?: string;
   productos: (Producto & { cantidad: number })[];
   operador: string;
   cerrada: boolean;
