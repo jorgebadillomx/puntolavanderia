@@ -15,7 +15,7 @@ import {
 import { Producto, Nota, Turno } from "../types";
 import { cargarProductos } from "../storage/productos";
 import { agregarTurno, cargarTurnos } from "../storage/turnos";
-import { guardarNota, cargarNotasPorTurno, getNotaPorId, actualizarNota } from "../storage/notas";
+import { crearNota, cargarNotasPorTurno, getNotaPorId, actualizarNota } from "../storage/notas";
 import { useAuth } from "../context/AuthContext";
 import { parseAmount } from "../utils/parseAmount";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -157,7 +157,7 @@ export default function PuntoVenta({ navigation }: any) {
       idTurno: turnoActivo.id,
     };
 
-    guardarNota(nueva);
+    await crearNota(nueva);
     const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
     const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
     setNotas([...notasAbiertas, ...notasCerradas]);
@@ -223,15 +223,15 @@ const quitarProductoDeNota = async (idProducto: string) => {
   // 1. Busca la nota en el array local
   const notaOriginal = notas.find((n) => n.id === id);
   if (!notaOriginal) {
-    Alert.alert("Nota no encontrada");
+    Alert.alert("Nota no encontrada 1 ");
     return;
   }
 
-  const nota = await getNotaPorId(id);
-  if (!nota) {
-    Alert.alert("Nota no encontrada");
-    return;
-  }
+  // const nota = await getNotaPorId(id);
+  // if (!nota) {
+  //   Alert.alert("Nota no encontrada 2");
+  //   return;
+  // }
 
   // 2. Calcula totales y crea la nota modificada
   const total = notaOriginal.productos.reduce(
@@ -240,16 +240,16 @@ const quitarProductoDeNota = async (idProducto: string) => {
   );
   const fechaCierre = new Date().toISOString();
 
-  nota.cambio = metodoPago === "efectivo" ? montoRecibido - total : undefined;  
-  nota.fechaCierre = fechaCierre;
-  nota.cerrada = true;
-  nota.metodoPago = metodoPago;
-  nota.montoRecibido = montoRecibido;
-  nota.total = total;
-  nota.idTurno = turnoActivo?.id ?? "";
+  notaOriginal.cambio = metodoPago === "efectivo" ? montoRecibido - total : undefined;  
+  notaOriginal.fechaCierre = fechaCierre;
+  notaOriginal.cerrada = true;
+  notaOriginal.metodoPago = metodoPago;
+  notaOriginal.montoRecibido = montoRecibido;
+  notaOriginal.total = total;
+  notaOriginal.idTurno = turnoActivo?.id ?? "";
 
   // 3. Actualiza en Firestore
-  await actualizarNota(nota);
+  await actualizarNota(notaOriginal);
 
   // 4. Refresca notas desde la base de datos para asegurar consistencia
   if (turnoActivo) {
@@ -263,7 +263,7 @@ const quitarProductoDeNota = async (idProducto: string) => {
   setPagoSeleccionado(null);
   setMontoPago("");
 };
-S
+
   const notaSeleccionada = notas.find((n) => n.id === notaActiva);
   const totalNotaSeleccionada = notaSeleccionada
     ? notaSeleccionada.productos.reduce(

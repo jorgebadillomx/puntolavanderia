@@ -14,11 +14,12 @@ import { Nota } from "../types";
 
 const notasRef = collection(db, "notas");
 
-export async function guardarNota(nota: Nota) {
+export async function crearNota(nota: Nota) {
   try {
-        // Use the nota id as the document id to keep consistency
-    const notaRef = doc(notasRef, nota.id);
+  
+    const notaRef = doc(db, "notas", nota.id);
     await setDoc(notaRef, nota);
+
   } catch (error) {
     console.error("[notas.ts] ERROR al guardar nota:", error);
   }
@@ -26,14 +27,18 @@ export async function guardarNota(nota: Nota) {
 
 export async function cargarNotasPorTurno(
   idTurno: string,
-  cerrada: boolean
+  cerrada?: boolean // ahora opcional
 ): Promise<Nota[]> {
   try {
-    const q = query(
-      notasRef,
+    // Construye los filtros dinámicamente
+    const filters = [
       where("idTurno", "==", idTurno),
-      where("cerrada", "==", cerrada) 
-    );
+      ...(cerrada !== undefined && cerrada !== null
+        ? [where("cerrada", "==", cerrada)]
+        : [])
+    ];
+
+    const q = query(notasRef, ...filters);
     const snapshot = await getDocs(q);
 
     const notas: Nota[] = snapshot.docs.map((d) => ({
@@ -46,6 +51,7 @@ export async function cargarNotasPorTurno(
     return [];
   }
 }
+
 
 export async function actualizarNota(nota: Nota | null) {
   try {

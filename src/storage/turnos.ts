@@ -13,7 +13,7 @@ const turnosRef = collection(db, "turnos");
 
 export async function agregarTurno(turno: Turno) {
   try {
-        const ref = doc(db, "turnos", turno.id);
+    const ref = doc(db, "turnos", turno.id);
     await setDoc(ref, turno);
   } catch (error) {
     console.error("[turnos.ts] Error al agregar turno:", error);
