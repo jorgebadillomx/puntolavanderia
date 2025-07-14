@@ -3927,6 +3927,11 @@ expo-modules-core@2.4.2:
   dependencies:
     invariant "^2.2.4"
 
+expo-print@^14.1.4:
+  version "14.1.4"
+  resolved "https://registry.yarnpkg.com/expo-print/-/expo-print-14.1.4.tgz#ff184e1efbc3c61ca896894e85f0e842d96940ba"
+  integrity sha512-qcXdvgwtjgFxX92pd3vdZXZRiFAMysVrCJWrPQvZOSw9OjxeczTOUjcAXRdAC2qFki8Gq/eCnKozSxYN5QCFxw==
+
 expo-splash-screen@~0.30.10:
   version "0.30.10"
   resolved "https://registry.yarnpkg.com/expo-splash-screen/-/expo-splash-screen-0.30.10.tgz#d249d350f867b6513fa34a9c4cf6545260ab5208"

@@ -19,6 +19,7 @@ import { crearNota, cargarNotasPorTurno, getNotaPorId, actualizarNota } from "..
 import { useAuth } from "../context/AuthContext";
 import { parseAmount } from "../utils/parseAmount";
 import { MaterialIcons } from "@expo/vector-icons";
+import { printTicket } from "../utils/printTicket";
 
 export default function PuntoVenta({ navigation }: any) {
   const { cerrarTurno: cerrarSesion } = useAuth();
@@ -261,6 +262,9 @@ const quitarProductoDeNota = async (idProducto: string) => {
 
   // 3. Actualiza en Firestore
   await actualizarNota(notaOriginal);
+
+  // 4. Imprimir el ticket
+  await printTicket(notaOriginal);
 
   // 4. Refresca notas desde la base de datos para asegurar consistencia
   if (turnoActivo) {

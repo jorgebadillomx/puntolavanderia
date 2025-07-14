@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet, Button } from "react-native";
+import { View, Text, FlatList, StyleSheet, Button, TouchableOpacity  } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Nota, Turno } from "../types";
 import { cargarNotasPorTurno } from "../storage/notas";
 import { getTurno } from "../storage/turnos";
+import { printTicket } from "../utils/printTicket";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function HistorialNotas() {
   const route = useRoute();
@@ -84,6 +86,12 @@ export default function HistorialNotas() {
                 - {p.nombre} x {p.cantidad ?? 1} = ${p.precio * (p.cantidad ?? 1)}
               </Text>
             ))}
+            <TouchableOpacity
+              onPress={() => printTicket(item)}
+              style={{ marginTop: 8, alignSelf: "flex-start" }}
+            >
+              <MaterialIcons name="print" size={24} color="black" />
+            </TouchableOpacity>
           </View>
         )}
       />
