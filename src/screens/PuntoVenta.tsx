@@ -121,6 +121,17 @@ export default function PuntoVenta({ navigation }: any) {
     }
     if (!turnoActivo) return;
 
+    const notasAbiertas = notas.filter(
+      (n) => n.idTurno === turnoActivo.id && !n.cerrada
+    );
+    if (notasAbiertas.length > 0) {
+      Alert.alert(
+        "No es posible cerrar el turno",
+        "Existen notas abiertas que deben cerrarse primero."
+      );
+      return;
+    }
+
     const totalVendido = notas
       .filter((n) => n.idTurno === turnoActivo.id && n.cerrada)
       .reduce((s, n) => s + (n.total || 0), 0);
