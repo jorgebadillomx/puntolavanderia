@@ -15,7 +15,12 @@ import {
 import { Producto, Nota, Turno } from "../types";
 import { cargarProductos } from "../storage/productos";
 import { agregarTurno, cargarTurnos } from "../storage/turnos";
-import { crearNota, cargarNotasPorTurno, getNotaPorId, actualizarNota } from "../storage/notas";
+import {
+  crearNota,
+  cargarNotasPorTurno,
+  getNotaPorId,
+  actualizarNota,
+} from "../storage/notas";
 import { useAuth } from "../context/AuthContext";
 import { parseAmount } from "../utils/parseAmount";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -64,7 +69,6 @@ export default function PuntoVenta({ navigation }: any) {
 
       setNotas([...notasAbiertas, ...notasCerradas]);
     } else {
-
       //  Si no hay turno abierto, vaciar todo
       setTurnoActivo(null);
       setUsuario("");
@@ -177,107 +181,108 @@ export default function PuntoVenta({ navigation }: any) {
     setMote("");
   };
 
-const agregarProductoANota = async (producto: Producto) => {
-  if (!notaActiva) return;
+  const agregarProductoANota = async (producto: Producto) => {
+    if (!notaActiva) return;
 
-  // 1. Obtener la nota actual de Firestore
-  const nota = await getNotaPorId(notaActiva);
-  if (!nota || nota.cerrada) return;
+    // 1. Obtener la nota actual de Firestore
+    const nota = await getNotaPorId(notaActiva);
+    if (!nota || nota.cerrada) return;
 
-  // 2. Modificar productos
-  const productos = [...nota.productos];
-  const idx = productos.findIndex((p) => p.id === producto.id);
-  if (idx >= 0) productos[idx].cantidad += 1;
-  else productos.push({ ...producto, cantidad: 1 });
+    // 2. Modificar productos
+    const productos = [...nota.productos];
+    const idx = productos.findIndex((p) => p.id === producto.id);
+    if (idx >= 0) productos[idx].cantidad += 1;
+    else productos.push({ ...producto, cantidad: 1 });
 
-  // 3. Actualizar la nota en Firestore
-  await actualizarNota({ ...nota, productos });
+    // 3. Actualizar la nota en Firestore
+    await actualizarNota({ ...nota, productos });
 
-  // 4. Actualizar el estado local en React
+    // 4. Actualizar el estado local en React
     if (turnoActivo) {
-    const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
-    const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
-    setNotas([...notasAbiertas, ...notasCerradas]);
-  }
-};
+      const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
+      const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+      setNotas([...notasAbiertas, ...notasCerradas]);
+    }
+  };
 
-const quitarProductoDeNota = async (idProducto: string) => {
-  if (!notaActiva) return;
+  const quitarProductoDeNota = async (idProducto: string) => {
+    if (!notaActiva) return;
 
-  // 1. Obtener la nota actual de Firestore
-  const nota = await getNotaPorId(notaActiva);
-  if (!nota || nota.cerrada) return;
+    // 1. Obtener la nota actual de Firestore
+    const nota = await getNotaPorId(notaActiva);
+    if (!nota || nota.cerrada) return;
 
-  // 2. Modificar productos
-  const productos = [...nota.productos];
-  const idx = productos.findIndex((p) => p.id === idProducto);
-  if (idx >= 0) {
-    if (productos[idx].cantidad > 1) productos[idx].cantidad -= 1;
-    else productos.splice(idx, 1);
-  }
+    // 2. Modificar productos
+    const productos = [...nota.productos];
+    const idx = productos.findIndex((p) => p.id === idProducto);
+    if (idx >= 0) {
+      if (productos[idx].cantidad > 1) productos[idx].cantidad -= 1;
+      else productos.splice(idx, 1);
+    }
 
-  // 3. Actualizar la nota en Firestore
-  await actualizarNota({ ...nota, productos });
+    // 3. Actualizar la nota en Firestore
+    await actualizarNota({ ...nota, productos });
 
-  // 4. Actualizar el estado local en React
+    // 4. Actualizar el estado local en React
     if (turnoActivo) {
-    const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
-    const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
-    setNotas([...notasAbiertas, ...notasCerradas]);
-  }
-};
+      const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
+      const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+      setNotas([...notasAbiertas, ...notasCerradas]);
+    }
+  };
 
   const cerrarNota = async (
-  id: string,
-  metodoPago: string,
-  montoRecibido: number
-) => {
-  // 1. Busca la nota en el array local
-  const notaOriginal = notas.find((n) => n.id === id);
-  if (!notaOriginal) {
-    Alert.alert("Nota no encontrada 1 ");
-    return;
-  }
+    id: string,
+    metodoPago: string,
+    montoRecibido: number
+  ) => {
+    // 1. Busca la nota en el array local
+    const notaOriginal = notas.find((n) => n.id === id);
+    if (!notaOriginal) {
+      Alert.alert("Nota no encontrada 1 ");
+      return;
+    }
 
-  // const nota = await getNotaPorId(id);
-  // if (!nota) {
-  //   Alert.alert("Nota no encontrada 2");
-  //   return;
-  // }
+    // const nota = await getNotaPorId(id);
+    // if (!nota) {
+    //   Alert.alert("Nota no encontrada 2");
+    //   return;
+    // }
 
-  // 2. Calcula totales y crea la nota modificada
-  const total = notaOriginal.productos.reduce(
-    (s, p) => s + p.precio * (p.cantidad ?? 1),
-    0
-  );
-  const fechaCierre = new Date().toISOString();
+    // 2. Calcula totales y crea la nota modificada
+    const total = notaOriginal.productos.reduce(
+      (s, p) => s + p.precio * (p.cantidad ?? 1),
+      0
+    );
+    const fechaCierre = new Date().toISOString();
 
-  notaOriginal.cambio = metodoPago === "efectivo" ? montoRecibido - total : undefined;  
-  notaOriginal.fechaCierre = fechaCierre;
-  notaOriginal.cerrada = true;
-  notaOriginal.metodoPago = metodoPago;
-  notaOriginal.montoRecibido = montoRecibido;
-  notaOriginal.total = total;
-  notaOriginal.idTurno = turnoActivo?.id ?? "";
+    notaOriginal.cambio =
+      metodoPago === "efectivo" ? montoRecibido - total : undefined;
+    notaOriginal.fechaCierre = fechaCierre;
+    notaOriginal.cerrada = true;
+    notaOriginal.metodoPago = metodoPago;
+    notaOriginal.montoRecibido = montoRecibido;
+    notaOriginal.total = total;
+    notaOriginal.idTurno = turnoActivo?.id ?? "";
 
-  // 3. Actualiza en Firestore
-  await actualizarNota(notaOriginal);
+    // 3. Actualiza en Firestore
+    await actualizarNota(notaOriginal);
 
-  // 4. Imprimir el ticket
-  await printTicket(notaOriginal);
+    // 4. Imprimir el ticket
+    await printTicket(notaOriginal);
 
-  // 4. Refresca notas desde la base de datos para asegurar consistencia
-  if (turnoActivo) {
-    const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
-    const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
-    setNotas([...notasAbiertas, ...notasCerradas]);
-  }
+    // 4. Refresca notas desde la base de datos para asegurar consistencia
+    if (turnoActivo) {
+      const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
+      const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+      setNotas([...notasAbiertas, ...notasCerradas]);
+    }
 
-  setNotaActiva(null);
-  setMostrarModal(false);
-  setPagoSeleccionado(null);
-  setMontoPago("");
-};
+    setNotaActiva(null);
+    setMostrarModal(false);
+    setPagoSeleccionado(null);
+    setMontoPago("");
+  };
 
   const notaSeleccionada = notas.find((n) => n.id === notaActiva);
   const totalNotaSeleccionada = notaSeleccionada
@@ -381,7 +386,7 @@ const quitarProductoDeNota = async (idProducto: string) => {
               <TouchableOpacity
                 key={nota.id}
                 onPress={() => setNotaActiva(nota.id)}
-                                style={[
+                style={[
                   styles.notaItem,
                   styles.notaAbierta,
                   notaActiva === nota.id && styles.notaSeleccionada,
@@ -399,7 +404,7 @@ const quitarProductoDeNota = async (idProducto: string) => {
               <TouchableOpacity
                 key={nota.id}
                 onPress={() => setNotaActiva(nota.id)}
-                                style={[
+                style={[
                   styles.notaItem,
                   styles.notaCerrada,
                   notaActiva === nota.id && styles.notaSeleccionada,
@@ -412,7 +417,7 @@ const quitarProductoDeNota = async (idProducto: string) => {
       </View>
 
       {notaSeleccionada && (
-                <View style={styles.notaSeleccionadaContainer}>
+        <View style={styles.notaSeleccionadaContainer}>
           <Text style={styles.notaSeleccionadaTitulo}>
             Nota: {notaSeleccionada.mote}
           </Text>
@@ -605,7 +610,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 12,
   },
-   notaItem: {
+  notaItem: {
     padding: 8,
     borderRadius: 6,
     borderWidth: 1,
