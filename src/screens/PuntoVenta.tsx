@@ -351,7 +351,7 @@ const quitarProductoDeNota = async (idProducto: string) => {
         placeholder="Mote para nueva nota"
         value={mote}
         onChangeText={setMote}
-        style={styles.input}
+        style={[styles.input, { marginTop: 10 }]}
       />
       <Button title="Nueva nota" onPress={agregarNota} />
 
@@ -374,42 +374,48 @@ const quitarProductoDeNota = async (idProducto: string) => {
 
       <View style={{ flexDirection: "row", marginTop: 16 }}>
         <View style={{ flex: 1, marginRight: 8 }}>
-          <Text style={{ fontSize: 20 }}>Abiertas:</Text>
+          <Text style={{ fontSize: 20, marginBottom: 4 }}>Abiertas:</Text>
           {notas
             .filter((n) => !n.cerrada)
             .map((nota) => (
               <TouchableOpacity
                 key={nota.id}
                 onPress={() => setNotaActiva(nota.id)}
-                style={{ marginVertical: 4 }}
+                                style={[
+                  styles.notaItem,
+                  styles.notaAbierta,
+                  notaActiva === nota.id && styles.notaSeleccionada,
+                ]}
               >
-                <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-                  {nota.mote || "Sin mote"}
-                </Text>
+                <Text style={styles.notaTexto}>{nota.mote || "Sin mote"}</Text>
               </TouchableOpacity>
             ))}
         </View>
         <View style={{ flex: 1, marginLeft: 8 }}>
-          <Text style={{ fontSize: 20 }}>Cerradas:</Text>
+          <Text style={{ fontSize: 20, marginBottom: 4 }}>Cerradas:</Text>
           {notas
             .filter((n) => n.cerrada)
             .map((nota) => (
               <TouchableOpacity
                 key={nota.id}
                 onPress={() => setNotaActiva(nota.id)}
-                style={{ marginVertical: 4 }}
+                                style={[
+                  styles.notaItem,
+                  styles.notaCerrada,
+                  notaActiva === nota.id && styles.notaSeleccionada,
+                ]}
               >
-                <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-                  {nota.mote || "Sin mote"}
-                </Text>
+                <Text style={styles.notaTexto}>{nota.mote || "Sin mote"}</Text>
               </TouchableOpacity>
             ))}
         </View>
       </View>
 
       {notaSeleccionada && (
-        <View style={{ marginTop: 16 }}>
-          <Text style={{ fontSize: 20 }}>Nota: {notaSeleccionada.mote}</Text>
+                <View style={styles.notaSeleccionadaContainer}>
+          <Text style={styles.notaSeleccionadaTitulo}>
+            Nota: {notaSeleccionada.mote}
+          </Text>
           {notaSeleccionada.productos.map((p) => (
             <View
               key={p.id}
@@ -599,4 +605,32 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 12,
   },
+   notaItem: {
+    padding: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginVertical: 4,
+  },
+  notaAbierta: {
+    backgroundColor: "#d1fae5",
+    borderColor: "#10b981",
+  },
+  notaCerrada: {
+    backgroundColor: "#e5e7eb",
+    borderColor: "#9ca3af",
+  },
+  notaTexto: { fontWeight: "bold", fontSize: 16 },
+  notaSeleccionada: {
+    borderColor: "#3b82f6",
+    borderWidth: 2,
+  },
+  notaSeleccionadaContainer: {
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+    backgroundColor: "#f0f8ff",
+  },
+  notaSeleccionadaTitulo: { fontSize: 20, marginBottom: 6 },
 });
