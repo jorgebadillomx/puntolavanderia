@@ -3,6 +3,7 @@ export interface Producto {
   nombre: string;
   precio: number;
   gasto?: number;
+  orden: number;
 }
 
 export interface Nota {

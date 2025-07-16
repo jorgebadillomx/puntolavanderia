@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "d0150e1c-8ef6-4584-97ed-70b978ce9c12"
+      }
+    },
+    "android": {
+      "package": "com.jorgebadillomx.puntolavanderia"
+    }
+  }
+}

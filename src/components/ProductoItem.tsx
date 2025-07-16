@@ -6,11 +6,28 @@ interface Props {
   producto: Producto;
   onEdit: () => void;
   onDelete: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }
-export default function ProductoItem({ producto, onEdit, onDelete }: Props) {
+export default function ProductoItem({
+  producto,
+  onEdit,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+}: Props) {
   return (
     <View style={styles.item}>
-      <Text style={styles.itemText}>{producto.nombre} - ${producto.precio}</Text>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <Text style={styles.itemText}>
+          {producto.nombre} - ${producto.precio}
+        </Text>
+        <View style={{ flexDirection: "row" }}>
+          <Button title="\u2191" onPress={onMoveUp} />
+          <View style={{ width: 4 }} />
+          <Button title="\u2193" onPress={onMoveDown} />
+        </View>
+      </View>
       {producto.gasto !== undefined && (
         <Text style={styles.gasto}>Gasto: ${producto.gasto}</Text>
       )}

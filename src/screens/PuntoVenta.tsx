@@ -56,6 +56,7 @@ export default function PuntoVenta({ navigation }: any) {
 
   async function cargarTodo() {
     const lista = await cargarProductos();
+    lista.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     setProductosBase(lista);
 
     const turnos = await cargarTurnos();
@@ -242,12 +243,6 @@ export default function PuntoVenta({ navigation }: any) {
       Alert.alert("Nota no encontrada 1 ");
       return;
     }
-
-    // const nota = await getNotaPorId(id);
-    // if (!nota) {
-    //   Alert.alert("Nota no encontrada 2");
-    //   return;
-    // }
 
     // 2. Calcula totales y crea la nota modificada
     const total = notaOriginal.productos.reduce(

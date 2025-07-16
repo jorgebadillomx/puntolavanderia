@@ -1,7 +1,7 @@
 // src/storage/notasRemoto.ts
 import {
   collection,
-  addDoc,
+  setDoc,
   getDocs,
   deleteDoc,
   doc,
@@ -15,7 +15,14 @@ const productosRef = collection(db, "productos");
 export async function cargarProductos(): Promise<Producto[]> {
   try {
     const snapshot = await getDocs(productosRef);
-    return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Producto));
+    return snapshot.docs.map((docSnap) => {
+      const data = docSnap.data();
+      return {
+        ...data,
+        id: docSnap.id,
+        orden: data.orden ?? 0,
+      } as Producto;
+    });
   } catch (error) {
     console.error("[productos.ts] Error al cargar productos:", error);
     return [];
@@ -24,24 +31,30 @@ export async function cargarProductos(): Promise<Producto[]> {
 
 export async function guardarProducto(producto: Producto) {
   try {
+    const Ref = doc(db, "productos", producto.id);
     const prodClean = { ...producto };
     if (prodClean.gasto === undefined || prodClean.gasto === "") {
       delete prodClean.gasto;
     }
-    await addDoc(productosRef, prodClean);
+    await setDoc(Ref, prodClean);
   } catch (error) {
     console.error("[productos.ts] ERROR al guardar producto:", error);
   }
 }
 
-
-
-
-
-export async function actualizarProducto(id: string, producto: Partial<Producto>) {
+export async function actualizarProducto(
+  id: string,
+  producto: Partial<Producto>
+) {
   try {
+
     const ref = doc(db, "productos", id);
-    await updateDoc(ref, producto);
+        const prodClean = { ...producto };
+    if (prodClean.gasto === undefined || prodClean.gasto === "") {
+      delete prodClean.gasto;
+    }
+
+   await updateDoc(ref, { ...prodClean });
   } catch (error) {
     console.error("[productos.ts] Error al actualizar producto:", error);
   }

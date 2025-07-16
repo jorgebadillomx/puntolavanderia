@@ -3,7 +3,7 @@ import { View, TextInput, Button, StyleSheet, Alert } from "react-native";
 import { Producto } from "../types";
 
 interface Props {
-  onSubmit: (producto: Omit<Producto, "id">) => void;
+  onSubmit: (producto: Omit<Producto, "id" | "orden">) => void;
   productoEdit?: Producto | null;
   onCancelEdit?: () => void;
 }
