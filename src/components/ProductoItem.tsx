@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, Button, StyleSheet } from "react-native";
+import { View, Text, Button, StyleSheet, TouchableOpacity } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 import { Producto } from "../types";
 
 interface Props {
@@ -23,9 +24,14 @@ export default function ProductoItem({
           {producto.nombre} - ${producto.precio}
         </Text>
         <View style={{ flexDirection: "row" }}>
-          <Button title="\u2191" onPress={onMoveUp} />
+                    <TouchableOpacity onPress={onMoveUp}>
+            <MaterialIcons name="arrow-upward" size={24} />
+          </TouchableOpacity>
           <View style={{ width: 4 }} />
-          <Button title="\u2193" onPress={onMoveDown} />
+           
+          <TouchableOpacity onPress={onMoveDown}>
+            <MaterialIcons name="arrow-downward" size={24} />
+          </TouchableOpacity>
         </View>
       </View>
       {producto.gasto !== undefined && (

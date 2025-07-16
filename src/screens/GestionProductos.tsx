@@ -66,13 +66,8 @@ export default function GestionProductos() {
       return;
     }
     const updated = [...productos];
-    const a = { ...updated[index] };
-    const b = { ...updated[targetIndex] };
-    const temp = a.orden;
-    a.orden = b.orden;
-    b.orden = temp;
-    updated[index] = b;
-    updated[targetIndex] = a;
+    const [moved] = updated.splice(index, 1);
+    updated.splice(targetIndex, 0, moved);
     await guardarOrdenes(updated);
     setProductos([...updated]);
   };
