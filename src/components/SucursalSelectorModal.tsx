@@ -4,11 +4,25 @@ import { Picker } from '@react-native-picker/picker';
 import { SUCURSALES } from '../constants/Sucursales';
 import { useSucursal } from '../context/SucursalContext';
 
-export default function SucursalSelectorModal() {
+export default function SucursalSelectorModal({
+  visible = false,
+  onClose,
+}: {
+  visible?: boolean;
+  onClose?: () => void;
+}) {
   const { sucursal, setSucursal } = useSucursal();
-  const [seleccionada, setSeleccionada] = useState(SUCURSALES[0]?.id ?? '');
+    const [seleccionada, setSeleccionada] = useState(
+    sucursal?.id ?? SUCURSALES[0]?.id ?? ''
+  );
 
-  if (sucursal) return null;
+  const show = visible || !sucursal;
+  if (!show) return null;
+
+   const handleAceptar = async () => {
+    await setSucursal(seleccionada);
+    onClose?.();
+  };
 
   return (
     <Modal visible transparent animationType="fade">
@@ -29,7 +43,7 @@ export default function SucursalSelectorModal() {
               <Picker.Item key={s.id} label={s.nombre} value={s.id} />
             ))}
           </Picker>
-          <Button title="Aceptar" onPress={() => setSucursal(seleccionada)} />
+                   <Button title="Aceptar" onPress={handleAceptar} />
         </View>
       </View>
     </Modal>
