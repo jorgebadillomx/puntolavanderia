@@ -3,19 +3,23 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet  } from "react-nativ
 import { Turno } from "../types";
 import { cargarTurnos } from "../storage/turnos";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { useSucursal } from "../context/SucursalContext";
 
 export default function HistorialTurnos() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const navigation = useNavigation();
+    const { sucursal } = useSucursal();
 
-  useFocusEffect (
+ useFocusEffect(
     useCallback(() => {
       const cargar = async () => {
         const data = await cargarTurnos(); // ← este debe consultar Firestore
-        setTurnos(data); // ← asegúrate de reemplazar completamente
+                setTurnos(
+          data.filter((t) => t.idSucursal === sucursal?.id)
+        ); // ← asegúrate de reemplazar completamente
       };
       cargar();
-    }, [])
+    }, [sucursal])
   );
 
   return (

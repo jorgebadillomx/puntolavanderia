@@ -25,10 +25,11 @@ import { useAuth } from "../context/AuthContext";
 import { parseAmount } from "../utils/parseAmount";
 import { MaterialIcons } from "@expo/vector-icons";
 import { printTicket } from "../utils/printTicket";
+import { useSucursal } from "../context/SucursalContext";
 
 export default function PuntoVenta({ navigation }: any) {
   const { cerrarTurno: cerrarSesion } = useAuth();
-
+  const { sucursal } = useSucursal();
   const [usuario, setUsuario] = useState("");
   const [billetes, setBilletes] = useState("");
   const [monedas, setMonedas] = useState("");
@@ -60,7 +61,9 @@ export default function PuntoVenta({ navigation }: any) {
     setProductosBase(lista);
 
     const turnos = await cargarTurnos();
-    const actual = turnos.find((t) => !t.fechaCierre); // solo turno abierto
+    const actual = turnos.find(
+      (t) => !t.fechaCierre && t.idSucursal === sucursal?.id
+    );
 
     if (actual) {
       setTurnoActivo(actual);
@@ -94,6 +97,7 @@ export default function PuntoVenta({ navigation }: any) {
       fechaApertura: new Date().toISOString(),
       billetesInicial: parseAmount(billetes),
       monedasInicial: parseAmount(monedas),
+      idSucursal: sucursal?.id ?? "",
     };
 
     await agregarTurno(nuevoTurno);

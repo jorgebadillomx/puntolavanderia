@@ -21,8 +21,15 @@ export interface Nota {
   idTurno: string;
 }
 
+export interface Sucursal {
+  id: string;
+  nombre: string;
+}
+
+
 export interface Turno {
   id: string;
+  idSucursal: string;
   usuario: string;
   fechaApertura: string;
   billetesInicial: number;

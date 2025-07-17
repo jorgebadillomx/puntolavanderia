@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { parseAmount } from "../utils/parseAmount";
 import { Turno } from "../types";
 import { agregarTurno, cargarTurnos, actualizarTurno } from "../storage/turnos";
+import { useSucursal } from "./SucursalContext";
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "badis";
 
@@ -26,9 +27,10 @@ interface AuthContextData {
 const AuthContext = createContext<AuthContextData | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { sucursal } = useSucursal();
   const [user, setUser] = useState<{
     username: string;
-    role:  "administrador" | "operador";
+    role: "administrador" | "operador";
   } | null>(null);
   const loggedIn = React.useRef(false);
   const [turno, setTurno] = useState<Turno | null>(null);
@@ -36,8 +38,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const cargar = async () => {
+      if (!sucursal) {
+        setLoading(false);
+        return;
+      }
+
       const turnos = await cargarTurnos();
-      const activo = turnos.find((t) => !t.fechaCierre);
+      const activo = turnos.find(
+        (t) => !t.fechaCierre && t.idSucursal === sucursal.id
+      );
 
       if (activo && !loggedIn.current) {
         setTurno(activo);
@@ -46,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     };
     cargar();
-  }, []);
+  }, [sucursal]);
 
   const abrirTurno = async ({
     username,
@@ -62,11 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       billetes,
       monedas,
     });
-    
+
     loggedIn.current = true;
 
-
-    console.log('user', username, new Date().toString());
+    console.log("user", username, new Date().toString());
 
     if (username.trim().toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
       setUser({ username: ADMIN_USERNAME, role: "administrador" });
@@ -80,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fechaApertura: new Date().toISOString(),
       billetesInicial: parseAmount(billetes),
       monedasInicial: parseAmount(monedas),
+      idSucursal: sucursal?.id ?? "",
     };
 
     try {

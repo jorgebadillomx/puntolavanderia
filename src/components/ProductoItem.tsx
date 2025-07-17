@@ -19,20 +19,11 @@ export default function ProductoItem({
 }: Props) {
   return (
     <View style={styles.item}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <Text style={styles.itemText}>
           {producto.nombre} - ${producto.precio}
         </Text>
-        <View style={{ flexDirection: "row" }}>
-                    <TouchableOpacity onPress={onMoveUp}>
-            <MaterialIcons name="arrow-upward" size={24} />
-          </TouchableOpacity>
-          <View style={{ width: 4 }} />
-           
-          <TouchableOpacity onPress={onMoveDown}>
-            <MaterialIcons name="arrow-downward" size={24} />
-          </TouchableOpacity>
-        </View>
+
       </View>
       {producto.gasto !== undefined && (
         <Text style={styles.gasto}>Gasto: ${producto.gasto}</Text>
@@ -41,13 +32,26 @@ export default function ProductoItem({
         <Button title="Editar" onPress={onEdit} />
         <View style={{ width: 8 }} />
         <Button title="Eliminar" onPress={onDelete} color="#c22" />
+          <View style={{ width: 8 }} />
+                  <TouchableOpacity onPress={onMoveUp}>
+            <MaterialIcons name="arrow-upward" size={24} />
+          </TouchableOpacity>
+  <View style={{ width: 8 }} />
+                    <TouchableOpacity onPress={onMoveDown}>
+            <MaterialIcons name="arrow-downward" size={24} />
+          </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  item: { marginBottom: 10, backgroundColor: "#f0f0f0", padding: 10, borderRadius: 6 },
+  item: {
+    marginBottom: 10,
+    backgroundColor: "#f0f0f0",
+    padding: 10,
+    borderRadius: 6,
+  },
   itemText: { fontWeight: "bold" },
   gasto: { fontStyle: "italic", fontSize: 12 },
 });
