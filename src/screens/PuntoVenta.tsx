@@ -37,6 +37,7 @@ export default function PuntoVenta({ navigation }: any) {
 
   const [notas, setNotas] = useState<Nota[]>([]);
   const [notaActiva, setNotaActiva] = useState<string | null>(null);
+  const [tab, setTab] = useState<"abiertas" | "cerradas">("abiertas");
   const [mote, setMote] = useState("");
   const [productosBase, setProductosBase] = useState<Producto[]>([]);
 
@@ -49,6 +50,22 @@ export default function PuntoVenta({ navigation }: any) {
   const [billetesFinal, setBilletesFinal] = useState("");
   const [monedasFinal, setMonedasFinal] = useState("");
 
+    // Cuando cambia el tab o la lista de notas, seleccionar la primera nota
+  // correspondiente si no está ya seleccionada
+  useEffect(() => {
+    const notasFiltradas = notas.filter((n) =>
+      tab === "abiertas" ? !n.cerrada : n.cerrada
+    );
+    if (notasFiltradas.length === 0) {
+      setNotaActiva(null);
+      return;
+    }
+    if (!notaActiva || !notasFiltradas.some((n) => n.id === notaActiva)) {
+      setNotaActiva(notasFiltradas[0].id);
+    }
+  }, [tab, notas]);
+
+  
   useEffect(() => {
     cargarTodo();
     const unsubscribe = navigation.addListener("focus", cargarTodo);
@@ -376,9 +393,27 @@ export default function PuntoVenta({ navigation }: any) {
         style={{ marginVertical: 8 }}
       />
 
-      <View style={{ flexDirection: "row", marginTop: 16 }}>
-        <View style={{ flex: 1, marginRight: 8 }}>
-          <Text style={{ fontSize: 20, marginBottom: 4 }}>Abiertas:</Text>
+      <View style={styles.tabs}>
+        <Pressable
+          onPress={() => setTab("abiertas")}
+          style={[styles.tabButton, tab === "abiertas" && styles.tabButtonActive]}
+        >
+          <Text style={tab === "abiertas" ? styles.tabTextActive : undefined}>
+            Abiertas
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setTab("cerradas")}
+          style={[styles.tabButton, tab === "cerradas" && styles.tabButtonActive]}
+        >
+          <Text style={tab === "cerradas" ? styles.tabTextActive : undefined}>
+            Cerradas
+          </Text>
+        </Pressable>
+      </View>
+
+      {tab === "abiertas" && (
+        <View style={{ marginTop: 8 }}>
           {notas
             .filter((n) => !n.cerrada)
             .map((nota) => (
@@ -395,8 +430,10 @@ export default function PuntoVenta({ navigation }: any) {
               </TouchableOpacity>
             ))}
         </View>
-        <View style={{ flex: 1, marginLeft: 8 }}>
-          <Text style={{ fontSize: 20, marginBottom: 4 }}>Cerradas:</Text>
+      )}
+
+      {tab === "cerradas" && (
+        <View style={{ marginTop: 8 }}>
           {notas
             .filter((n) => n.cerrada)
             .map((nota) => (
@@ -413,7 +450,7 @@ export default function PuntoVenta({ navigation }: any) {
               </TouchableOpacity>
             ))}
         </View>
-      </View>
+      )}
 
       {notaSeleccionada && (
         <View style={styles.notaSeleccionadaContainer}>
@@ -609,6 +646,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 12,
   },
+    tabs: {
+    flexDirection: "row",
+    marginTop: 16,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderBottomWidth: 2,
+    borderColor: "transparent",
+  },
+  tabButtonActive: {
+    borderColor: "#3b82f6",
+  },
+  tabTextActive: { fontWeight: "bold" },
   notaItem: {
     padding: 8,
     borderRadius: 6,

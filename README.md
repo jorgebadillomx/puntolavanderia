@@ -9,6 +9,7 @@ Aplicación móvil hecha con [Expo](https://expo.dev/) y React Native para admin
 - **Punto de venta**: permite crear notas de venta, agregar productos, escoger método de pago (efectivo, tarjeta o transferencia) y calcular cambio. Las notas cerradas generan un ticket imprimible mediante `expo-print`.
 - **Administración de productos**: CRUD de productos con búsqueda por nombre. Cada producto tiene precio y opcionalmente un gasto asociado.
 - **Historial**: consulta de turnos anteriores y detalle de todas las notas de un turno.
+- **Sucursales**: la aplicación obliga a seleccionar una sucursal en el primer uso y guarda la elección de forma persistente. Todas las pantallas filtran su información por la sucursal activa y el administrador puede cambiarla desde el menú.
 
 ## Configuración y ejecución
 
@@ -20,7 +21,9 @@ Aplicación móvil hecha con [Expo](https://expo.dev/) y React Native para admin
 
 2. Crea un archivo `.env` con las variables de `.env.example` para definir el usuario administrador.
 
-3. Inicia la aplicación:
+3. Revisa la lista de sucursales en `constants/Sucursales.ts` y ajusta los nombres e identificadores según tus necesidades.
+
+4. Inicia la aplicación:
 
    ```bash
    npx expo start
