@@ -1,9 +1,23 @@
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 import { Nota } from "../types";
-import * as Print from "expo-print";
 import { TICKET_FOOTER_MESSAGE } from "../constants/Config";
 
 export async function printTicket(nota: Nota) {
-  const line = (text: string) => `<div>${text}</div>`;
+  const ESC = "\x1B";
+  const GS = "\x1D";
+
+  const setAlign = (n: "left" | "center" | "right") => {
+    const code = n === "left" ? 0 : n === "center" ? 1 : 2;
+    return `${ESC}a${String.fromCharCode(code)}`;
+  };
+
+  const boldOn = `${ESC}E\x01`;
+  const boldOff = `${ESC}E\x00`;
+  const cutPaper = `${GS}V\x00`;
+
+  const line = (text: string = "") => `${text}\n`;
+
   const productos = nota.productos
     .map(
       (p) =>
@@ -12,23 +26,39 @@ export async function printTicket(nota: Nota) {
     .map(line)
     .join("");
 
-  const html = `
-    <div style="font-size:12px;font-family:monospace;">
-      ${line(`Operador: ${nota.operador}`)}
-      ${line(`Fecha: ${nota.fechaCierre?.replace("T", " ").slice(0, 19)}`)}
-      ${line(`Pago: ${nota.metodoPago}`)}
-      ${line(`Total: $${nota.total?.toFixed(2)}`)}
-      ${line(`Recibido: $${nota.montoRecibido?.toFixed(2)}`)}
-      ${line(`Cambio: $${nota.cambio?.toFixed(2)}`)}
-      <hr />
-      ${productos}
-      <hr />
-      <div style="text-align:center;margin-top:8px;">${TICKET_FOOTER_MESSAGE}</div>
-    </div>`;
+  const ticketText =
+    ESC + "@\n" +
+    setAlign("center") +
+    boldOn +
+    line("TICKET DE COMPRA") +
+    boldOff +
+    setAlign("left") +
+    line(`Operador: ${nota.operador}`) +
+    line(`Fecha: ${nota.fechaCierre?.replace("T", " ").slice(0, 19)}`) +
+    line(`Pago: ${nota.metodoPago}`) +
+    line(`Total: $${nota.total?.toFixed(2)}`) +
+    line(`Recibido: $${nota.montoRecibido?.toFixed(2)}`) +
+    line(`Cambio: $${nota.cambio?.toFixed(2)}`) +
+    line("--------------------------------") +
+    productos +
+    line("--------------------------------") +
+    setAlign("center") +
+    line(TICKET_FOOTER_MESSAGE) +
+    line("\n\n\n") +
+    cutPaper;
 
   try {
-    await Print.printAsync({ html });
+    const fileUri = FileSystem.cacheDirectory + "ticket.txt";
+    await FileSystem.writeAsStringAsync(fileUri, ticketText, {
+      encoding: FileSystem.EncodingType.UTF8,
+    });
+
+    await Sharing.shareAsync(fileUri, {
+      mimeType: "text/plain",
+      dialogTitle: "Imprimir con RawBT",
+      UTI: "public.plain-text",
+    });
   } catch (err) {
-    console.warn("[printTicket]", err);
+    console.warn("[printTicketWithRawBT]", err);
   }
 }
