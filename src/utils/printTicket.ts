@@ -1,5 +1,6 @@
 import * as FileSystem from "expo-file-system";
-import * as Sharing from "expo-sharing";
+import * as Linking from "expo-linking";
+import { Buffer } from "buffer";
 import { Nota } from "../types";
 import { TICKET_FOOTER_MESSAGE } from "../constants/Config";
 
@@ -53,11 +54,11 @@ export async function printTicket(nota: Nota) {
       encoding: FileSystem.EncodingType.UTF8,
     });
 
-    await Sharing.shareAsync(fileUri, {
-      mimeType: "text/plain",
-      dialogTitle: "Imprimir con RawBT",
-      UTI: "public.plain-text",
-    });
+    const base64 = Buffer.from(ticketText, "binary").toString("base64");
+    const url = `rawbt:base64,${base64}`;
+    console.log("URL", url);
+    await Linking.openURL(url);
+    console.log("ya paso ");
   } catch (err) {
     console.warn("[printTicketWithRawBT]", err);
   }

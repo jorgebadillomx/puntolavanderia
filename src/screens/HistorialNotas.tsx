@@ -8,6 +8,20 @@ import { printTicket } from "../utils/printTicket";
 import { MaterialIcons } from "@expo/vector-icons";
 
 export default function HistorialNotas() {
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  const handlePrint = async (item: Nota) => {
+    if (loadingId) return; // Si ya está imprimiendo algo
+    setLoadingId(item.id);
+    try {
+      await printTicket(item);
+      // Aquí podrías mostrar un Toast de "Impresión enviada"
+    } catch (e) {
+      alert("Error al imprimir: " + (e?.message || e));
+    } finally {
+      setLoadingId(null);
+    }
+  };
   const route = useRoute();
   const { idTurno } = route.params as { idTurno: string };
   const navigation = useNavigation();
@@ -87,8 +101,9 @@ export default function HistorialNotas() {
               </Text>
             ))}
             <TouchableOpacity
-              onPress={() => printTicket(item)}
-              style={{ marginTop: 8, alignSelf: "flex-start" }}
+              onPress={() => handlePrint(item)}
+              style={{ marginTop: 8, alignSelf: "flex-start", opacity: loadingId === item.id ? 0.5 : 1 }}
+              disabled={loadingId === item.id}
             >
               <MaterialIcons name="print" size={24} color="black" />
             </TouchableOpacity>
