@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Button,
   TouchableOpacity,
+    ScrollView,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Nota, Turno, RegistroCaja } from "../types";
@@ -62,7 +63,7 @@ export default function HistorialNotas() {
   const gastos = gastosLista.reduce((s, r) => s + Math.abs(r.cantidad), 0);
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.container}>
       <Text style={styles.title}>Notas del Turno</Text>
 
       {/* Botón manual de regreso */}
@@ -106,7 +107,7 @@ export default function HistorialNotas() {
             Total vendido: ${totalTurno.toFixed(2)}
           </Text>
           {turno.totalCaja !== undefined && (
-            <Text>Total caja: ${turno.totalCaja}</Text>
+            <Text style={{ fontWeight: "bold" }}>Total caja: ${turno.totalCaja}</Text>
           )}
         </View>
         
@@ -137,15 +138,16 @@ export default function HistorialNotas() {
       <FlatList
         data={notas}
         keyExtractor={(item) => item.id}
+                scrollEnabled={false}
         renderItem={({ item }) => (
           <View style={styles.nota}>
-            <Text style={styles.mote}>{item.mote || "Sin mote"}</Text>
+            <Text style={styles.mote}>Cliente: {item.mote || "Sin mote"}</Text>
             <Text style={{ fontWeight: "bold" }}>
               Total: ${item.total?.toFixed(2)}
             </Text>
             <Text>Pago: {item.metodoPago}</Text>
-            <Text>Recibido: ${item.montoRecibido?.toFixed(2)}</Text>
-            <Text>Cambio: ${item.cambio?.toFixed(2)}</Text>
+            {/* <Text>Recibido: ${item.montoRecibido?.toFixed(2)}</Text>
+            <Text>Cambio: ${item.cambio?.toFixed(2)}</Text> */}
             <Text>
               Fecha: {item.fechaCierre?.replace("T", " ").slice(0, 19)}
             </Text>
@@ -170,13 +172,12 @@ export default function HistorialNotas() {
           </View>
         )}
       />
-
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+    container: { padding: 16 },
   title: { fontSize: 20, fontWeight: "bold", marginBottom: 12 },
   nota: {
     borderWidth: 1,
