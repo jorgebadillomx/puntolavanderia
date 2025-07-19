@@ -657,6 +657,7 @@ export default function PuntoVenta({ navigation }: any) {
                   onChangeText={setMontoPago}
                   keyboardType="decimal-pad"
                   style={styles.input}
+                   selectTextOnFocus
                 />
                 {["efectivo", "tarjeta", "transferencia"].map((tipo) => (
                   <Pressable
