@@ -65,15 +65,9 @@ export default function PuntoVenta({ navigation }: any) {
     if (!notaActiva || !notasFiltradas.some((n) => n.id === notaActiva)) {
       setNotaActiva(notasFiltradas[0].id);
     }
-  }, [tab, notas]);
+  }, [tab, notas, notaActiva]);
 
-  useEffect(() => {
-    cargarTodo();
-    const unsubscribe = navigation.addListener("focus", cargarTodo);
-    return unsubscribe;
-  }, [navigation]);
-
-  async function cargarTodo() {
+  const cargarTodo = React.useCallback(async () => {
     const lista = await cargarProductos();
     lista.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     setProductosBase(lista);
@@ -101,7 +95,13 @@ export default function PuntoVenta({ navigation }: any) {
     setMonedas("");
     setNotaActiva(null);
     setMote("");
-  }
+  }, [sucursal]);
+
+  useEffect(() => {
+    cargarTodo();
+    const unsubscribe = navigation.addListener("focus", cargarTodo);
+    return unsubscribe;
+  }, [navigation, cargarTodo]);
 
   const iniciarTurno = async () => {
     if (!usuario.trim() || !billetes.trim() || !monedas.trim()) {
