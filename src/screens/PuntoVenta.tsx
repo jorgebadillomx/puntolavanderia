@@ -13,7 +13,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { Producto, Nota, Turno } from "../types";
+import { Producto, Nota, Turno, RegistroCaja } from "../types";
 import { cargarProductos } from "../storage/productos";
 import { agregarTurno, cargarTurnos } from "../storage/turnos";
 import {
@@ -27,6 +27,11 @@ import { parseAmount } from "../utils/parseAmount";
 import { MaterialIcons } from "@expo/vector-icons";
 import { printTicket } from "../utils/printTicket";
 import { useSucursal } from "../context/SucursalContext";
+import {
+  crearRegistro,
+  cargarRegistrosPorTurno,
+  actualizarRegistro,
+} from "../storage/registrosCaja";
 
 export default function PuntoVenta({ navigation }: any) {
   const { cerrarTurno: cerrarSesion } = useAuth();
@@ -38,9 +43,22 @@ export default function PuntoVenta({ navigation }: any) {
 
   const [notas, setNotas] = useState<Nota[]>([]);
   const [notaActiva, setNotaActiva] = useState<string | null>(null);
-  const [tab, setTab] = useState<"abiertas" | "cerradas">("abiertas");
+  const [tab, setTab] = useState<"abiertas" | "cerradas" | "registros">(
+    "abiertas"
+  );
   const [mote, setMote] = useState("");
   const [productosBase, setProductosBase] = useState<Producto[]>([]);
+
+  const [registros, setRegistros] = useState<RegistroCaja[]>([]);
+  const [registroModo, setRegistroModo] = useState<"ingreso" | "gasto">(
+    "ingreso"
+  );
+  const [registroEditando, setRegistroEditando] = useState<RegistroCaja | null>(
+    null
+  );
+  const [identificador, setIdentificador] = useState("");
+  const [cantidad, setCantidad] = useState("");
+  const [mostrarRegistroModal, setMostrarRegistroModal] = useState(false);
 
   const [mostrarModal, setMostrarModal] = useState(false);
   const [pagoSeleccionado, setPagoSeleccionado] = useState<
@@ -55,6 +73,10 @@ export default function PuntoVenta({ navigation }: any) {
   // Cuando cambia el tab o la lista de notas, seleccionar la primera nota
   // correspondiente si no está ya seleccionada
   useEffect(() => {
+    if (tab === "registros") {
+      setNotaActiva(null);
+      return;
+    }
     const notasFiltradas = notas.filter((n) =>
       tab === "abiertas" ? !n.cerrada : n.cerrada
     );
@@ -82,13 +104,16 @@ export default function PuntoVenta({ navigation }: any) {
       setUsuario(actual.usuario);
       const notasCerradas = await cargarNotasPorTurno(actual.id, true);
       const notasAbiertas = await cargarNotasPorTurno(actual.id, false);
+      const regs = await cargarRegistrosPorTurno(actual.id);
 
       setNotas([...notasAbiertas, ...notasCerradas]);
+      setRegistros(regs);
     } else {
       //  Si no hay turno abierto, vaciar todo
       setTurnoActivo(null);
       setUsuario("");
       setNotas([]);
+      setRegistros([]);
     }
 
     setBilletes("");
@@ -122,6 +147,7 @@ export default function PuntoVenta({ navigation }: any) {
     setTurnoActivo(nuevoTurno);
     setUsuario(nuevoTurno.usuario);
     setNotas([]);
+    setRegistros([]);
     setNotaActiva(null);
     setMote("");
     setBilletes("");
@@ -163,16 +189,20 @@ export default function PuntoVenta({ navigation }: any) {
     const totalVendido = notas
       .filter((n) => n.idTurno === turnoActivo.id && n.cerrada)
       .reduce((s, n) => s + (n.total || 0), 0);
+    const totalRegistros = registros.reduce((s, r) => s + r.cantidad, 0);
+    const totalCaja = totalVendido + totalRegistros;
 
     await cerrarSesion({
       billetes: billetesFinal,
       monedas: monedasFinal,
       totalNotas: totalVendido,
+      totalCaja,
     });
 
     setTurnoActivo(null);
     setUsuario("");
     setNotas([]);
+    setRegistros([]);
     setNotaActiva(null);
     setMote("");
     setModalCierreTurno(false);
@@ -389,18 +419,60 @@ export default function PuntoVenta({ navigation }: any) {
         {turnoActivo.monedasInicial} monedas
       </Text>
 
-      <Button
-        title="Administrar productos"
-        onPress={() => navigation.navigate("GestionProductos")}
-      />
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginTop: 8,
+        }}
+      >
+        <Pressable
+          onPress={() => {
+            setRegistroModo("ingreso");
+            setRegistroEditando(null);
+            setIdentificador("");
+            setCantidad("");
+            setMostrarRegistroModal(true);
+          }}
+          style={{
+            flex: 1,
+            backgroundColor: "#bbf7d0",
+            padding: 10,
+            borderRadius: 6,
+            marginRight: 4,
+          }}
+        >
+          <Text style={{ textAlign: "center", fontWeight: "bold" }}>
+            Ingreso
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            setRegistroModo("gasto");
+            setRegistroEditando(null);
+            setIdentificador("");
+            setCantidad("");
+            setMostrarRegistroModal(true);
+          }}
+          style={{
+            flex: 1,
+            backgroundColor: "#fecaca",
+            padding: 10,
+            borderRadius: 6,
+            marginLeft: 4,
+          }}
+        >
+          <Text style={{ textAlign: "center", fontWeight: "bold" }}>Gasto</Text>
+        </Pressable>
+      </View>
 
       <TextInput
-        placeholder="Mote para nueva nota"
+        placeholder="Mote para nuevo cliente"
         value={mote}
         onChangeText={setMote}
         style={[styles.input, { marginTop: 10 }]}
       />
-      <Button title="Nueva nota" onPress={agregarNota} />
+      <Button title="Nuevo cliente" onPress={agregarNota} />
 
       <FlatList
         data={productosBase}
@@ -440,6 +512,17 @@ export default function PuntoVenta({ navigation }: any) {
         >
           <Text style={tab === "cerradas" ? styles.tabTextActive : undefined}>
             Cerradas
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setTab("registros")}
+          style={[
+            styles.tabButton,
+            tab === "registros" && styles.tabButtonActive,
+          ]}
+        >
+          <Text style={tab === "registros" ? styles.tabTextActive : undefined}>
+            Ingreso/gasto
           </Text>
         </Pressable>
       </View>
@@ -484,10 +567,37 @@ export default function PuntoVenta({ navigation }: any) {
         </View>
       )}
 
+      {tab === "registros" && (
+        <View style={{ marginTop: 8 }}>
+          {registros.map((r) => (
+            <TouchableOpacity
+              key={r.id}
+              onPress={() => {
+                setRegistroModo(r.cantidad >= 0 ? "ingreso" : "gasto");
+                setRegistroEditando(r);
+                setIdentificador(r.identificador);
+                setCantidad(Math.abs(r.cantidad).toString());
+                setMostrarRegistroModal(true);
+              }}
+              style={[
+                styles.notaItem,
+                {
+                  backgroundColor: r.cantidad >= 0 ? "#d1fae5" : "#fee2e2",
+                  borderColor: r.cantidad >= 0 ? "#10b981" : "#f87171",
+                },
+              ]}
+            >
+              <Text style={styles.notaTexto}>{r.identificador}</Text>
+              <Text>{r.cantidad}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       {notaSeleccionada && (
         <View style={styles.notaSeleccionadaContainer}>
           <Text style={styles.notaSeleccionadaTitulo}>
-            Nota: {notaSeleccionada.mote}
+            Cliente: {notaSeleccionada.mote}
           </Text>
           {notaSeleccionada.productos.map((p) => (
             <View
@@ -522,6 +632,7 @@ export default function PuntoVenta({ navigation }: any) {
                 title="Cerrar"
                 onPress={() => {
                   setMontoPago(totalNotaSeleccionada.toFixed(2));
+                  setPagoSeleccionado("efectivo");
                   setMostrarModal(true);
                 }}
               />
@@ -611,6 +722,77 @@ export default function PuntoVenta({ navigation }: any) {
         </View>
       )}
 
+      <Modal visible={mostrarRegistroModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>
+              {registroEditando ? "Editar" : "Nuevo"}{" "}
+              {registroModo === "ingreso" ? "ingreso" : "gasto"}
+            </Text>
+            <TextInput
+              placeholder="Identificador"
+              value={identificador}
+              onChangeText={setIdentificador}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Cantidad"
+              value={cantidad}
+              onChangeText={setCantidad}
+              keyboardType="decimal-pad"
+              style={styles.input}
+            />
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-between" }}
+            >
+              <Button
+                title="Cancelar"
+                onPress={() => setMostrarRegistroModal(false)}
+              />
+              <Button
+                title="Guardar"
+                onPress={async () => {
+                  if (
+                    !identificador.trim() ||
+                    !cantidad.trim() ||
+                    !turnoActivo
+                  ) {
+                    Alert.alert("Completa todos los campos");
+                    return;
+                  }
+                  setCargando(true);
+                  try {
+                    const valor = parseAmount(cantidad);
+                    const monto =
+                      registroModo === "gasto"
+                        ? -Math.abs(valor)
+                        : Math.abs(valor);
+                    if (registroEditando) {
+                      await actualizarRegistro(registroEditando.id, {
+                        identificador,
+                        cantidad: monto,
+                      });
+                    } else {
+                      await crearRegistro({
+                        id: Date.now().toString(),
+                        idTurno: turnoActivo.id,
+                        identificador,
+                        cantidad: monto,
+                      });
+                    }
+                  } finally {
+                    setCargando(false);
+                  }
+                  const regs = await cargarRegistrosPorTurno(turnoActivo.id);
+                  setRegistros(regs);
+                  setMostrarRegistroModal(false);
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={modalCierreTurno} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
@@ -641,6 +823,7 @@ export default function PuntoVenta({ navigation }: any) {
           </View>
         </View>
       </Modal>
+      
       <Modal visible={cargando} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.loadingModal}>
@@ -713,8 +896,8 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   notaAbierta: {
-    backgroundColor: "#d1fae5",
-    borderColor: "#10b981",
+    backgroundColor: "#e0f2fe",
+    borderColor: "#60a5fa",
   },
   notaCerrada: {
     backgroundColor: "#e5e7eb",

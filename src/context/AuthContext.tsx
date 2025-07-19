@@ -21,6 +21,7 @@ interface AuthContextData {
     billetes: string;
     monedas: string;
     totalNotas?: number;
+    totalCaja?: number;
   }) => Promise<void>;
 }
 
@@ -104,10 +105,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     billetes,
     monedas,
     totalNotas,
+        totalCaja,
   }: {
     billetes: string;
     monedas: string;
     totalNotas?: number;
+    totalCaja?: number;
   }) => {
     if (user?.role === "administrador") {
       setUser(null);
@@ -123,6 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       billetesFinal: parseAmount(billetes),
       monedasFinal: parseAmount(monedas),
       totalVendido: totalNotas,
+      totalCaja: totalCaja,
     };
 
     await actualizarTurno(turno.id, turnoCerrado);

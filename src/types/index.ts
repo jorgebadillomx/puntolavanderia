@@ -38,5 +38,12 @@ export interface Turno {
   billetesFinal?: number;
   monedasFinal?: number;
   totalVendido?: number;
+  totalCaja?: number;
 }
 
+export interface RegistroCaja {
+  id: string;
+  idTurno: string;
+  identificador: string;
+  cantidad: number;
+}
