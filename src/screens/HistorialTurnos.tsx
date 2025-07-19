@@ -32,10 +32,10 @@ export default function HistorialTurnos() {
         for (const t of filtrados) {
           const regs = await cargarRegistrosPorTurno(t.id);
           const ingresos = regs
-            .filter((r) => r.cantidad >= 0)
+            .filter((r) => r.tipo === "ingreso")
             .reduce((s, r) => s + r.cantidad, 0);
           const gastos = regs
-            .filter((r) => r.cantidad < 0)
+            .filter((r) => r.tipo === "gasto")
             .reduce((s, r) => s + Math.abs(r.cantidad), 0);
           conRegistros.push({ ...t, ingresos, gastos });
         }

@@ -57,8 +57,8 @@ export default function HistorialNotas() {
     0
   );
 
-  const ingresosLista = registros.filter((r) => r.cantidad >= 0);
-  const gastosLista = registros.filter((r) => r.cantidad < 0);
+  const ingresosLista = registros.filter((r) => r.tipo === "ingreso");
+  const gastosLista = registros.filter((r) => r.tipo === "gasto");
   const ingresos = ingresosLista.reduce((s, r) => s + r.cantidad, 0);
   const gastos = gastosLista.reduce((s, r) => s + Math.abs(r.cantidad), 0);
 

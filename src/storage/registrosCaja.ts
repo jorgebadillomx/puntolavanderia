@@ -16,7 +16,12 @@ const registrosRef = collection(db, "registrosCaja");
 export async function crearRegistro(registro: RegistroCaja) {
   try {
     const ref = doc(db, "registrosCaja", registro.id);
-    await setDoc(ref, registro);
+        await setDoc(ref, {
+      ...registro,
+      fecha: registro.fecha ?? new Date().toISOString(),
+      tipo:
+        registro.tipo ?? (registro.cantidad >= 0 ? "ingreso" : "gasto"),
+    });
   } catch (error) {
     console.error("[registrosCaja.ts] Error al crear registro:", error);
   }

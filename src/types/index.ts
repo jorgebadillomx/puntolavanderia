@@ -46,4 +46,6 @@ export interface RegistroCaja {
   idTurno: string;
   identificador: string;
   cantidad: number;
+    tipo: "ingreso" | "gasto";
+  fecha: string;
 }

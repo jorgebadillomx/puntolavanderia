@@ -573,7 +573,7 @@ export default function PuntoVenta({ navigation }: any) {
             <TouchableOpacity
               key={r.id}
               onPress={() => {
-                setRegistroModo(r.cantidad >= 0 ? "ingreso" : "gasto");
+                setRegistroModo(r.tipo);
                 setRegistroEditando(r);
                 setIdentificador(r.identificador);
                 setCantidad(Math.abs(r.cantidad).toString());
@@ -772,12 +772,15 @@ export default function PuntoVenta({ navigation }: any) {
                       await actualizarRegistro(registroEditando.id, {
                         identificador,
                         cantidad: monto,
+                        tipo: registroModo,
                       });
                     } else {
                       await crearRegistro({
                         id: Date.now().toString(),
                         idTurno: turnoActivo.id,
                         identificador,
+                        tipo: registroModo,
+                        fecha: new Date().toISOString(),
                         cantidad: monto,
                       });
                     }
