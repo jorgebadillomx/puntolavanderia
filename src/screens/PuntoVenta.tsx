@@ -285,8 +285,9 @@ export default function PuntoVenta({ navigation }: any) {
     );
     const fechaCierre = new Date().toISOString();
 
-    notaOriginal.cambio =
-      metodoPago === "efectivo" ? montoRecibido - total : undefined;
+    // notaOriginal.cambio =
+    //   metodoPago === "efectivo" ? montoRecibido - total : undefined;
+    notaOriginal.cambio = montoRecibido - total;
     notaOriginal.fechaCierre = fechaCierre;
     notaOriginal.cerrada = true;
     notaOriginal.metodoPago = metodoPago;
@@ -517,7 +518,13 @@ export default function PuntoVenta({ navigation }: any) {
 
           {!notaSeleccionada.cerrada && (
             <View style={{ marginTop: 8 }}>
-              <Button title="Cerrar" onPress={() => setMostrarModal(true)} />
+              <Button
+                title="Cerrar"
+                onPress={() => {
+                  setMontoPago(totalNotaSeleccionada.toFixed(2));
+                  setMostrarModal(true);
+                }}
+              />
             </View>
           )}
 

@@ -16,7 +16,7 @@ export default function HistorialNotas() {
     try {
       await printTicket(item);
       // Aquí podrías mostrar un Toast de "Impresión enviada"
-    } catch (e) {
+    } catch (e: any) {
       alert("Error al imprimir: " + (e?.message || e));
     } finally {
       setLoadingId(null);
