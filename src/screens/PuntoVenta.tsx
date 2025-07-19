@@ -11,6 +11,7 @@ import {
   Modal,
   Pressable,
   Alert,
+    ActivityIndicator,
 } from "react-native";
 import { Producto, Nota, Turno } from "../types";
 import { cargarProductos } from "../storage/productos";
@@ -49,6 +50,7 @@ export default function PuntoVenta({ navigation }: any) {
   const [modalCierreTurno, setModalCierreTurno] = useState(false);
   const [billetesFinal, setBilletesFinal] = useState("");
   const [monedasFinal, setMonedasFinal] = useState("");
+    const [cargando, setCargando] = useState(false);
 
     // Cuando cambia el tab o la lista de notas, seleccionar la primera nota
   // correspondiente si no está ya seleccionada
@@ -183,73 +185,85 @@ export default function PuntoVenta({ navigation }: any) {
       Alert.alert("Primero debes iniciar un turno.");
       return;
     }
-    const fechaAbre = new Date().toISOString();
+   setCargando(true);
+    try {
+      const fechaAbre = new Date().toISOString();
 
-    const nueva: Nota = {
-      id: Date.now().toString(),
-      mote,
-      productos: [],
-      operador: usuario,
-      fechaAbre: fechaAbre,
-      cerrada: false,
-      idTurno: turnoActivo.id,
-    };
+      const nueva: Nota = {
+        id: Date.now().toString(),
+        mote,
+        productos: [],
+        operador: usuario,
+        fechaAbre: fechaAbre,
+        cerrada: false,
+        idTurno: turnoActivo.id,
+      };
 
-    await crearNota(nueva);
-    const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
-    const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
-    setNotas([...notasAbiertas, ...notasCerradas]);
-    setNotaActiva(nueva.id);
-    setMote("");
+      await crearNota(nueva);
+      const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
+      const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+      setNotas([...notasAbiertas, ...notasCerradas]);
+      setNotaActiva(nueva.id);
+      setMote("");
+    } finally {
+      setCargando(false);
+    }
   };
 
   const agregarProductoANota = async (producto: Producto) => {
     if (!notaActiva) return;
+    setCargando(true);
+    try {
+      // 1. Obtener la nota actual de Firestore
+      const nota = await getNotaPorId(notaActiva);
+      if (!nota || nota.cerrada) return;
 
-    // 1. Obtener la nota actual de Firestore
-    const nota = await getNotaPorId(notaActiva);
-    if (!nota || nota.cerrada) return;
+      // 2. Modificar productos
+      const productos = [...nota.productos];
+      const idx = productos.findIndex((p) => p.id === producto.id);
+      if (idx >= 0) productos[idx].cantidad += 1;
+      else productos.push({ ...producto, cantidad: 1 });
 
-    // 2. Modificar productos
-    const productos = [...nota.productos];
-    const idx = productos.findIndex((p) => p.id === producto.id);
-    if (idx >= 0) productos[idx].cantidad += 1;
-    else productos.push({ ...producto, cantidad: 1 });
+      // 3. Actualizar la nota en Firestore
+      await actualizarNota({ ...nota, productos });
 
-    // 3. Actualizar la nota en Firestore
-    await actualizarNota({ ...nota, productos });
-
-    // 4. Actualizar el estado local en React
-    if (turnoActivo) {
-      const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
-      const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
-      setNotas([...notasAbiertas, ...notasCerradas]);
+      // 4. Actualizar el estado local en React
+      if (turnoActivo) {
+        const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
+        const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+        setNotas([...notasAbiertas, ...notasCerradas]);
+      }
+    } finally {
+      setCargando(false);
     }
   };
-
   const quitarProductoDeNota = async (idProducto: string) => {
     if (!notaActiva) return;
+    setCargando(true);
+    try {
+      // 1. Obtener la nota actual de Firestore
+      const nota = await getNotaPorId(notaActiva);
+      if (!nota || nota.cerrada) return;
 
-    // 1. Obtener la nota actual de Firestore
-    const nota = await getNotaPorId(notaActiva);
-    if (!nota || nota.cerrada) return;
+      // 2. Modificar productos
+      const productos = [...nota.productos];
+      const idx = productos.findIndex((p) => p.id === idProducto);
+      if (idx >= 0) {
+        if (productos[idx].cantidad > 1) productos[idx].cantidad -= 1;
+        else productos.splice(idx, 1);
+      }
 
-    // 2. Modificar productos
-    const productos = [...nota.productos];
-    const idx = productos.findIndex((p) => p.id === idProducto);
-    if (idx >= 0) {
-      if (productos[idx].cantidad > 1) productos[idx].cantidad -= 1;
-      else productos.splice(idx, 1);
-    }
+      // 3. Actualizar la nota en Firestore
+      await actualizarNota({ ...nota, productos });
 
-    // 3. Actualizar la nota en Firestore
-    await actualizarNota({ ...nota, productos });
-
-    // 4. Actualizar el estado local en React
-    if (turnoActivo) {
-      const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
-      const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
-      setNotas([...notasAbiertas, ...notasCerradas]);
+      // 4. Actualizar el estado local en React
+      if (turnoActivo) {
+        const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
+        const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+        setNotas([...notasAbiertas, ...notasCerradas]);
+      }
+    } finally {
+      setCargando(false);
     }
   };
 
@@ -281,18 +295,21 @@ export default function PuntoVenta({ navigation }: any) {
     notaOriginal.total = total;
     notaOriginal.idTurno = turnoActivo?.id ?? "";
 
+        setCargando(true);
+
     // 3. Actualiza en Firestore
     await actualizarNota(notaOriginal);
 
-    // 4. Imprimir el ticket
-    await printTicket(notaOriginal);
-
-    // 4. Refresca notas desde la base de datos para asegurar consistencia
+    // Refresca notas antes de imprimir para no mostrar el modal durante la impresion
     if (turnoActivo) {
       const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
       const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
       setNotas([...notasAbiertas, ...notasCerradas]);
     }
+    setCargando(false);
+
+    // 4. Imprimir el ticket
+    await printTicket(notaOriginal);
 
     setNotaActiva(null);
     setMostrarModal(false);
@@ -603,6 +620,13 @@ export default function PuntoVenta({ navigation }: any) {
           </View>
         </View>
       </Modal>
+            <Modal visible={cargando} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.loadingModal}>
+            <ActivityIndicator size="large" color="#3b82f6" />
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -689,4 +713,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f8ff",
   },
   notaSeleccionadaTitulo: { fontSize: 20, marginBottom: 6 },
+    loadingModal: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 12,
+  },
 });
