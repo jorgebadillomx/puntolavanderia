@@ -11,7 +11,7 @@ import {
   Modal,
   Pressable,
   Alert,
-    ActivityIndicator,
+  ActivityIndicator,
 } from "react-native";
 import { Producto, Nota, Turno } from "../types";
 import { cargarProductos } from "../storage/productos";
@@ -50,9 +50,9 @@ export default function PuntoVenta({ navigation }: any) {
   const [modalCierreTurno, setModalCierreTurno] = useState(false);
   const [billetesFinal, setBilletesFinal] = useState("");
   const [monedasFinal, setMonedasFinal] = useState("");
-    const [cargando, setCargando] = useState(false);
+  const [cargando, setCargando] = useState(false);
 
-    // Cuando cambia el tab o la lista de notas, seleccionar la primera nota
+  // Cuando cambia el tab o la lista de notas, seleccionar la primera nota
   // correspondiente si no está ya seleccionada
   useEffect(() => {
     const notasFiltradas = notas.filter((n) =>
@@ -67,7 +67,6 @@ export default function PuntoVenta({ navigation }: any) {
     }
   }, [tab, notas]);
 
-  
   useEffect(() => {
     cargarTodo();
     const unsubscribe = navigation.addListener("focus", cargarTodo);
@@ -185,7 +184,7 @@ export default function PuntoVenta({ navigation }: any) {
       Alert.alert("Primero debes iniciar un turno.");
       return;
     }
-   setCargando(true);
+    setCargando(true);
     try {
       const fechaAbre = new Date().toISOString();
 
@@ -295,15 +294,16 @@ export default function PuntoVenta({ navigation }: any) {
     notaOriginal.total = total;
     notaOriginal.idTurno = turnoActivo?.id ?? "";
 
-        setCargando(true);
+    setCargando(true);
 
     // 3. Actualiza en Firestore
     await actualizarNota(notaOriginal);
 
+    let notasAbiertas: Nota[] = [];
     // Refresca notas antes de imprimir para no mostrar el modal durante la impresion
     if (turnoActivo) {
       const notasCerradas = await cargarNotasPorTurno(turnoActivo.id, true);
-      const notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
+      notasAbiertas = await cargarNotasPorTurno(turnoActivo.id, false);
       setNotas([...notasAbiertas, ...notasCerradas]);
     }
     setCargando(false);
@@ -311,7 +311,15 @@ export default function PuntoVenta({ navigation }: any) {
     // 4. Imprimir el ticket
     await printTicket(notaOriginal);
 
-    setNotaActiva(null);
+    // After closing a note, return to open notes list and select the first
+    // available open note if any
+
+    setTab("abiertas");
+    if (notasAbiertas.length > 0) {
+      setNotaActiva(notasAbiertas[0].id);
+    } else {
+      setNotaActiva(null);
+    }
     setMostrarModal(false);
     setPagoSeleccionado(null);
     setMontoPago("");
@@ -413,7 +421,10 @@ export default function PuntoVenta({ navigation }: any) {
       <View style={styles.tabs}>
         <Pressable
           onPress={() => setTab("abiertas")}
-          style={[styles.tabButton, tab === "abiertas" && styles.tabButtonActive]}
+          style={[
+            styles.tabButton,
+            tab === "abiertas" && styles.tabButtonActive,
+          ]}
         >
           <Text style={tab === "abiertas" ? styles.tabTextActive : undefined}>
             Abiertas
@@ -421,7 +432,10 @@ export default function PuntoVenta({ navigation }: any) {
         </Pressable>
         <Pressable
           onPress={() => setTab("cerradas")}
-          style={[styles.tabButton, tab === "cerradas" && styles.tabButtonActive]}
+          style={[
+            styles.tabButton,
+            tab === "cerradas" && styles.tabButtonActive,
+          ]}
         >
           <Text style={tab === "cerradas" ? styles.tabTextActive : undefined}>
             Cerradas
@@ -620,7 +634,7 @@ export default function PuntoVenta({ navigation }: any) {
           </View>
         </View>
       </Modal>
-            <Modal visible={cargando} transparent animationType="fade">
+      <Modal visible={cargando} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.loadingModal}>
             <ActivityIndicator size="large" color="#3b82f6" />
@@ -670,7 +684,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 12,
   },
-    tabs: {
+  tabs: {
     flexDirection: "row",
     marginTop: 16,
   },
@@ -713,7 +727,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f8ff",
   },
   notaSeleccionadaTitulo: { fontSize: 20, marginBottom: 6 },
-    loadingModal: {
+  loadingModal: {
     backgroundColor: "white",
     padding: 20,
     borderRadius: 12,
